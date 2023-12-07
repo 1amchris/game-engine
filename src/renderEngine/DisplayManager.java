@@ -18,7 +18,7 @@ public class DisplayManager {
         try {
             Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
             Display.create(new PixelFormat(), attribs);
-            Display.setTitle("Check me out on https://github.com/1amchris/GameEngine");
+            Display.setTitle("Check me out on https://github.com/1amchris/game-engine");
         } catch (LWJGLException e) {
             e.printStackTrace();
         }
