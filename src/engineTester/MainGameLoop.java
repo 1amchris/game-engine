@@ -2,14 +2,17 @@ package engineTester;
 
 import entities.Camera;
 import entities.Entity;
+import entities.Light;
+import entities.Terrain;
+import models.RawModel;
 import models.TexturedModel;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
-import models.RawModel;
-import renderEngine.Renderer;
-import shaders.StaticShader;
+import renderEngine.MasterRenderer;
+import renderEngine.OBJLoader;
 import textures.ModelTexture;
 
 import java.io.File;
@@ -21,105 +24,39 @@ public class MainGameLoop {
 
         setupNatives();
         DisplayManager.createDisplay();
+        Mouse.setGrabbed(true);
 
         Loader loader = new Loader();
-        StaticShader shader = new StaticShader();
-        Renderer renderer = new Renderer(shader);
+        MasterRenderer renderer = new MasterRenderer();
 
-        /* Cube entity */
-        float[] vertices = {
-                -0.5f,0.5f,-0.5f,
-                -0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,0.5f,-0.5f,
+        RawModel model = OBJLoader.loadObjModel("TheStanfordDragon", loader);
+        ModelTexture grass = new ModelTexture(loader.loadTexture("grass"));
+        ModelTexture purple = new ModelTexture(loader.loadTexture("purple"));
+        purple.setReflectivity(2);
+        purple.setShineDamper(15);
 
-                -0.5f,0.5f,0.5f,
-                -0.5f,-0.5f,0.5f,
-                0.5f,-0.5f,0.5f,
-                0.5f,0.5f,0.5f,
-
-                0.5f,0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,0.5f,
-                0.5f,0.5f,0.5f,
-
-                -0.5f,0.5f,-0.5f,
-                -0.5f,-0.5f,-0.5f,
-                -0.5f,-0.5f,0.5f,
-                -0.5f,0.5f,0.5f,
-
-                -0.5f,0.5f,0.5f,
-                -0.5f,0.5f,-0.5f,
-                0.5f,0.5f,-0.5f,
-                0.5f,0.5f,0.5f,
-
-                -0.5f,-0.5f,0.5f,
-                -0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,0.5f
-        };
-
-        float[] textureCoords = {
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0
-        };
-
-        int[] indices = {
-                0,1,3,
-                3,1,2,
-                4,5,7,
-                7,5,6,
-                8,9,11,
-                11,9,10,
-                12,13,15,
-                15,13,14,
-                16,17,19,
-                19,17,18,
-                20,21,23,
-                23,21,22
-        };
-
-        RawModel rawModel = loader.loadToVAO(vertices, textureCoords, indices);
-        ModelTexture texture = new ModelTexture(loader.loadTexture("image"));
-        TexturedModel model = new TexturedModel(rawModel, texture);
-        Entity entity = new Entity(model, new Vector3f(0, 0, -5), new Vector3f(0, 0, 0), 1);
-
+        Light light = new Light(new Vector3f(3000, 2000, 2000), new Vector3f(1, 1, 1));
         Camera camera = new Camera();
 
+        Terrain terrain1 = new Terrain(0, 0, loader, grass);
+        Terrain terrain2 = new Terrain(1, 0, loader, grass);
+        Entity entity = new Entity(new TexturedModel(model, purple), new Vector3f(0, 0, -25),
+                new Vector3f(0, 0, 0), 25f);
+
         while (!Display.isCloseRequested()) {
-            entity.increaseRotation(new Vector3f(1, 1, 0));
+            entity.increaseRotation(new Vector3f(0, 0.5f, 0));
             camera.move();
-            renderer.prepare();
-            shader.start();
-            shader.loadViewMatrix(camera);
-            renderer.render(entity, shader);
-            shader.stop();
+            recenterMouse();
+
+            renderer.processTerrain(terrain1);
+            renderer.processTerrain(terrain2);
+            renderer.processEntity(entity);
+
+            renderer.render(light, camera);
             DisplayManager.updateDisplay();
         }
 
-        shader.cleanUp();
+        renderer.cleanUp();
         loader.cleanUp();
         DisplayManager.closeDisplay();
     }
@@ -137,6 +74,12 @@ public class MainGameLoop {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void recenterMouse() {
+        if (Display.isActive()) {
+            Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
         }
     }
 }
