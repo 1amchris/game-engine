@@ -114,13 +114,12 @@ public class MainGameLoop {
         entities.put(fernModel, generateRandomEntities(fernModel, fernTexture, 1, count));
     }
 
-    private static RawModel addGrass(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static void addGrass(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
         RawModel plantModel = OBJLoader.loadObjModel("grassModel", loader);
         ModelTexture grassTexture = new ModelTexture(loader.loadTexture("grassTexture"));
         grassTexture.setTransparency(true);
         grassTexture.setUseFakeLighting(true);
         entities.put(plantModel, generateRandomEntities(plantModel, grassTexture, 2, count));
-        return plantModel;
     }
 
     private static void addFlowers(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
