@@ -62,12 +62,6 @@ public class OBJLoader {
                 }
 
                 String[] currentLine = line.split(" ");
-//                String[] vertex1 = currentLine[1].split("/");
-//                String[] vertex2 = currentLine[2].split("/");
-//                String[] vertex3 = currentLine[3].split("/");
-//                processVertex(vertex1, indices, textures, normals, texturesArray, normalsArray);
-//                processVertex(vertex2, indices, textures, normals, texturesArray, normalsArray);
-//                processVertex(vertex3, indices, textures, normals, texturesArray, normalsArray);
                 for (int i = 0; i < 3; i++) {
                     String[] vertex = currentLine[i + 1].split("/");
                     processVertex(vertex, indices, textures, normals, texturesArray, normalsArray);

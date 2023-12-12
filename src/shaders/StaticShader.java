@@ -2,7 +2,10 @@ package shaders;
 
 import entities.Camera;
 import entities.Light;
+import models.TexturedModel;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
+import textures.ModelTexture;
 import toolbox.Maths;
 
 import java.io.File;
@@ -19,6 +22,8 @@ public class StaticShader extends ShaderProgram {
     private int location_lightColour;
     private int location_shineDamper;
     private int location_reflectivity;
+    private int location_useFakeLighting;
+    private int location_skyColour;
 
     public StaticShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
@@ -33,6 +38,8 @@ public class StaticShader extends ShaderProgram {
         location_lightColour = super.getUniformLocation("lightColour");
         location_shineDamper = super.getUniformLocation("shineDamper");
         location_reflectivity = super.getUniformLocation("reflectivity");
+        location_useFakeLighting = super.getUniformLocation("useFakeLighting");
+        location_skyColour = super.getUniformLocation("skyColour");
     }
 
     @Override
@@ -42,14 +49,19 @@ public class StaticShader extends ShaderProgram {
         super.bindAttribute(2, "normal");
     }
 
+    public void loadSkyColour(Vector3f colour) {
+        super.loadVector(location_skyColour, colour);
+    }
+
     public void loadLight(Light light) {
         super.loadVector(location_lightPosition, light.getPosition());
         super.loadVector(location_lightColour, light.getColour());
     }
 
-    public void loadTextureProperties(float damper, float reflectivity) {
-        super.loadFloat(location_shineDamper, damper);
-        super.loadFloat(location_reflectivity, reflectivity);
+    public void loadTextureProperties(ModelTexture texture) {
+        super.loadFloat(location_shineDamper, texture.getShineDamper());
+        super.loadFloat(location_reflectivity, texture.getReflectivity());
+        super.loadBoolean(location_useFakeLighting, texture.getUseFakeLighting());
     }
 
     public void loadTransformationMatrix(Matrix4f matrix) {
