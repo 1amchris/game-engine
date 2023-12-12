@@ -14,6 +14,8 @@ import renderEngine.Loader;
 import renderEngine.MasterRenderer;
 import renderEngine.OBJLoader;
 import textures.ModelTexture;
+import textures.TerrainTexture;
+import textures.TerrainTexturePack;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -32,37 +34,20 @@ public class MainGameLoop {
         Light light = new Light(new Vector3f(1500, 2000, 1500), new Vector3f(1, 1, 1));
         Camera camera = new Camera();
 
-        ModelTexture terrainTexture = new ModelTexture(loader.loadTexture("green"));
-        Terrain terrain1 = new Terrain(0, 0, loader, terrainTexture);
-        Terrain terrain2 = new Terrain(1, 0, loader, terrainTexture);
-        Terrain terrain3 = new Terrain(0, 1, loader, terrainTexture);
-        Terrain terrain4 = new Terrain(1, 1, loader, terrainTexture);
+        TerrainTexturePack terrainTexturePack = new TerrainTexturePack(
+            new TerrainTexture(loader.loadTexture("terrain" + File.separator + "grassy")),
+            new TerrainTexture(loader.loadTexture("terrain" + File.separator + "mud")),
+            new TerrainTexture(loader.loadTexture("terrain" + File.separator + "flowers")),
+            new TerrainTexture(loader.loadTexture("terrain" + File.separator + "path"))
+        );
+        TerrainTexture terrainBlendMap = new TerrainTexture(loader.loadTexture("terrain" + File.separator + "blendMap"));
 
-        RawModel fernModel = OBJLoader.loadObjModel("fern", loader);
-        ModelTexture fernTexture = new ModelTexture(loader.loadTexture("fern"));
-        fernTexture.setTransparency(true);
-        Map<RawModel, List<Entity>> entities = new Hashtable<>();
-        entities.put(fernModel, generateRandomEntities(fernModel, fernTexture, 1, 200));
+        Terrain terrain1 = new Terrain(0, 0, loader, terrainTexturePack, terrainBlendMap);
+        Terrain terrain2 = new Terrain(1, 0, loader, terrainTexturePack, terrainBlendMap);
+        Terrain terrain3 = new Terrain(0, 1, loader, terrainTexturePack, terrainBlendMap);
+        Terrain terrain4 = new Terrain(1, 1, loader, terrainTexturePack, terrainBlendMap);
 
-        RawModel plantModel = OBJLoader.loadObjModel("grassModel", loader);
-        ModelTexture grassTexture = new ModelTexture(loader.loadTexture("grassTexture"));
-        grassTexture.setTransparency(true);
-        grassTexture.setUseFakeLighting(true);
-        entities.put(plantModel, generateRandomEntities(plantModel, grassTexture, 2, 100));
-
-        ModelTexture flowerTexture = new ModelTexture(loader.loadTexture("flower"));
-        flowerTexture.setTransparency(true);
-        flowerTexture.setUseFakeLighting(true);
-        entities.get(plantModel).addAll(generateRandomEntities(plantModel, flowerTexture, 3, 100));
-
-        RawModel treeModel = OBJLoader.loadObjModel("lowPolyTree", loader);
-        ModelTexture treeTexture = new ModelTexture(loader.loadTexture("lowPolyTree"));
-        entities.put(treeModel, generateRandomEntities(treeModel, treeTexture, 1, 100));
-
-        RawModel bunnyModel = OBJLoader.loadObjModel("bunny", loader);
-        ModelTexture bunnyTexture = new ModelTexture(loader.loadTexture("white"));
-        entities.put(bunnyModel, generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, 20));
-
+        Map<RawModel, List<Entity>> entities = generateStaticEntities(loader);
 
         while (!Display.isCloseRequested()) {
             camera.move();
@@ -108,6 +93,54 @@ public class MainGameLoop {
         if (Display.isActive()) {
             Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
         }
+    }
+
+    private static Map<RawModel, List<Entity>> generateStaticEntities(Loader loader) {
+        Map<RawModel, List<Entity>> entities = new Hashtable<>();
+
+        addFern(loader, entities, 200);
+        addGrass(loader, entities, 100);
+        addFlowers(loader, entities, 100);
+        addTrees(loader, entities, 100);
+        addBunnies(loader, entities, 20);
+
+        return entities;
+    }
+
+    private static void addFern(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+        RawModel fernModel = OBJLoader.loadObjModel("fern", loader);
+        ModelTexture fernTexture = new ModelTexture(loader.loadTexture("fern"));
+        fernTexture.setTransparency(true);
+        entities.put(fernModel, generateRandomEntities(fernModel, fernTexture, 1, count));
+    }
+
+    private static RawModel addGrass(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+        RawModel plantModel = OBJLoader.loadObjModel("grassModel", loader);
+        ModelTexture grassTexture = new ModelTexture(loader.loadTexture("grassTexture"));
+        grassTexture.setTransparency(true);
+        grassTexture.setUseFakeLighting(true);
+        entities.put(plantModel, generateRandomEntities(plantModel, grassTexture, 2, count));
+        return plantModel;
+    }
+
+    private static void addFlowers(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+        RawModel plantModel = OBJLoader.loadObjModel("grassModel", loader);
+        ModelTexture flowerTexture = new ModelTexture(loader.loadTexture("flower"));
+        flowerTexture.setTransparency(true);
+        flowerTexture.setUseFakeLighting(true);
+        entities.put(plantModel, generateRandomEntities(plantModel, flowerTexture, 3, count));
+    }
+
+    private static void addTrees(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+        RawModel treeModel = OBJLoader.loadObjModel("lowPolyTree", loader);
+        ModelTexture treeTexture = new ModelTexture(loader.loadTexture("lowPolyTree"));
+        entities.put(treeModel, generateRandomEntities(treeModel, treeTexture, 1, count));
+    }
+
+    private static void addBunnies(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+        RawModel bunnyModel = OBJLoader.loadObjModel("bunny", loader);
+        ModelTexture bunnyTexture = new ModelTexture(loader.loadTexture("white"));
+        entities.put(bunnyModel, generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, count));
     }
 
     private static List<Entity> generateRandomEntities(RawModel model, ModelTexture texture, float scale, int count) {
