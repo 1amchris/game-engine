@@ -10,6 +10,9 @@ public class ModelTexture {
     private Boolean hasTransparency = false;
     private Boolean useFakeLighting = false;
 
+    private int atlasGridSize = 1;
+    private int texturesCount = 1;
+
     public ModelTexture(int id) {
         this.textureID = id;
     }
@@ -48,5 +51,18 @@ public class ModelTexture {
 
     public void setUseFakeLighting(Boolean useFakeLighting) {
         this.useFakeLighting = useFakeLighting;
+    }
+
+    public int getAtlasGridSize() {
+        return atlasGridSize;
+    }
+
+    public int getTexturesCount() {
+        return texturesCount;
+    }
+
+    public void setAtlasProperties(int atlasGridSize, int texturesCount) {
+        this.atlasGridSize = atlasGridSize;
+        this.texturesCount = texturesCount;
     }
 }

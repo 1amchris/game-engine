@@ -2,8 +2,8 @@ package shaders;
 
 import entities.Camera;
 import entities.Light;
-import models.TexturedModel;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import textures.ModelTexture;
 import toolbox.Maths;
@@ -24,6 +24,8 @@ public class StaticShader extends ShaderProgram {
     private int location_reflectivity;
     private int location_useFakeLighting;
     private int location_skyColour;
+    private int location_atlasGridSize;
+    private int location_atlasTextureOffset;
 
     public StaticShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
@@ -40,6 +42,8 @@ public class StaticShader extends ShaderProgram {
         location_reflectivity = super.getUniformLocation("reflectivity");
         location_useFakeLighting = super.getUniformLocation("useFakeLighting");
         location_skyColour = super.getUniformLocation("skyColour");
+        location_atlasGridSize = super.getUniformLocation("atlasGridSize");
+        location_atlasTextureOffset = super.getUniformLocation("atlasTextureOffset");
     }
 
     @Override
@@ -49,13 +53,21 @@ public class StaticShader extends ShaderProgram {
         super.bindAttribute(2, "normal");
     }
 
+    public void loadAtlasGridSize(int atlasGridSize) {
+        loadFloat(location_atlasGridSize, atlasGridSize);
+    }
+
+    public void loadAtlasTextureOffset(Vector2f offset) {
+        load2DVector(location_atlasTextureOffset, offset);
+    }
+
     public void loadSkyColour(Vector3f colour) {
-        super.loadVector(location_skyColour, colour);
+        super.load3DVector(location_skyColour, colour);
     }
 
     public void loadLight(Light light) {
-        super.loadVector(location_lightPosition, light.getPosition());
-        super.loadVector(location_lightColour, light.getColour());
+        super.load3DVector(location_lightPosition, light.getPosition());
+        super.load3DVector(location_lightColour, light.getColour());
     }
 
     public void loadTextureProperties(ModelTexture texture) {

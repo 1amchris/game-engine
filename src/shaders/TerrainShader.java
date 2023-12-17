@@ -64,12 +64,12 @@ public class TerrainShader extends ShaderProgram {
     }
 
     public void loadSkyColour(Vector3f colour) {
-        super.loadVector(location_skyColour, colour);
+        super.load3DVector(location_skyColour, colour);
     }
 
     public void loadLight(Light light) {
-        super.loadVector(location_lightPosition, light.getPosition());
-        super.loadVector(location_lightColour, light.getColour());
+        super.load3DVector(location_lightPosition, light.getPosition());
+        super.load3DVector(location_lightColour, light.getColour());
     }
 
     public void loadTextureProperties(float damper, float reflectivity) {

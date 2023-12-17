@@ -17,6 +17,9 @@ uniform vec3 lightPosition;
 
 uniform float useFakeLighting;
 
+uniform float atlasGridSize;
+uniform vec2 atlasTextureOffset;
+
 const float density = 0.003;
 const float gradient = 10.0;
 
@@ -24,7 +27,7 @@ void main(void) {
     vec4 worldPosition = transformationMatrix * vec4(position, 1.0);
     vec4 positionRelativeToCamera = viewMatrix * worldPosition;
     gl_Position = projectionMatrix * positionRelativeToCamera;
-    pass_textureCoords = textureCoords;
+    pass_textureCoords = (textureCoords / atlasGridSize) + atlasTextureOffset;
 
     vec3 actualNormal = normal;
     if (useFakeLighting > 0.5) {

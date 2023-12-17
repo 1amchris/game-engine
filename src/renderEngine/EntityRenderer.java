@@ -44,6 +44,7 @@ public class EntityRenderer {
         GL20.glEnableVertexAttribArray(2);
 
         ModelTexture texture = model.getTexture();
+        shader.loadAtlasGridSize(texture.getAtlasGridSize());
         if (texture.isTransparent()) {
             MasterRenderer.disableCulling();
         }
@@ -64,5 +65,6 @@ public class EntityRenderer {
         Matrix4f transformationMatrix = Maths.createTransformationMatrix(
                 entity.getPosition(), entity.getRotation(), entity.getScale());
         shader.loadTransformationMatrix(transformationMatrix);
+        shader.loadAtlasTextureOffset(entity.getModel().getTextureOffset());
     }
 }
