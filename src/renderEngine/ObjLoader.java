@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OBJLoader {
+public class ObjLoader {
     public static RawModel loadObjModel(String fileName, Loader loader) {
         FileReader fileReader = null;
         try {

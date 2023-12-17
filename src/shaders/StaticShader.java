@@ -12,8 +12,8 @@ import java.io.File;
 
 public class StaticShader extends ShaderProgram {
 
-    private static final String VERTEX_FILE = "src" + File.separator + "shaders" + File.separator + "vertexShader.glsl";
-    private static final String FRAGMENT_FILE = "src" + File.separator + "shaders" + File.separator + "fragmentShader.glsl";
+    private static final String VERTEX_FILE = "src" + File.separator + "shaders" + File.separator + "entityVertexShader.glsl";
+    private static final String FRAGMENT_FILE = "src" + File.separator + "shaders" + File.separator + "entityFragmentShader.glsl";
 
     private int location_transformationMatrix;
     private int location_projectionMatrix;

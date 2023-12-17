@@ -5,11 +5,10 @@ import models.RawModel;
 import models.TexturedModel;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import renderEngine.DisplayManager;
-import renderEngine.Loader;
-import renderEngine.MasterRenderer;
-import renderEngine.OBJLoader;
+import renderEngine.*;
+import textures.GuiTexture;
 import textures.ModelTexture;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
@@ -20,6 +19,7 @@ import java.util.*;
 
 public class MainGameLoop {
 
+    private static final String GUI_DIR = "guis" + File.separator;
     private static final String OBJECT_DIR = "objects" + File.separator;
     private static final String TERRAIN_DIR = "terrain" + File.separator;
 
@@ -60,6 +60,13 @@ public class MainGameLoop {
 
         Map<RawModel, List<Entity>> entities = generateStaticEntities(loader, world);
 
+        List<GuiTexture> guis = new ArrayList<>();
+        GuiTexture healthBar = new GuiTexture(loader.loadTexture(GUI_DIR + "health"),
+                new Vector2f(-0.75f, -0.85f), new Vector2f(0.2f, 0.2f));
+        guis.add(healthBar);
+
+        GuiRenderer guiRenderer = new GuiRenderer(loader);
+
         while (!Display.isCloseRequested()) {
             camera.move();
             player.move(getTerrainPlayerIsStandingOn(player, world));
@@ -79,9 +86,11 @@ public class MainGameLoop {
             }
 
             renderer.render(light, camera);
+            guiRenderer.render(guis);
             DisplayManager.updateDisplay();
         }
 
+        guiRenderer.cleanUp();
         renderer.cleanUp();
         loader.cleanUp();
         DisplayManager.closeDisplay();
@@ -128,7 +137,7 @@ public class MainGameLoop {
     }
 
     private static List<Entity> createFern(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
-        RawModel fernModel = OBJLoader.loadObjModel(OBJECT_DIR + "fern", loader);
+        RawModel fernModel = ObjLoader.loadObjModel(OBJECT_DIR + "fern", loader);
         ModelTexture fernTextureAtlas = new ModelTexture(loader.loadTexture(OBJECT_DIR + "fern"));
         fernTextureAtlas.setAtlasProperties(2, 4);
         fernTextureAtlas.setTransparency(true);
@@ -138,7 +147,7 @@ public class MainGameLoop {
     }
 
     private static List<Entity> createGreeneries(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
-        RawModel model = OBJLoader.loadObjModel(OBJECT_DIR + "grassModel", loader);
+        RawModel model = ObjLoader.loadObjModel(OBJECT_DIR + "grassModel", loader);
         ModelTexture texture = new ModelTexture(loader.loadTexture(OBJECT_DIR + "greeneries"));
         texture.setAtlasProperties(4, 9);
         texture.setTransparency(true);
@@ -149,7 +158,7 @@ public class MainGameLoop {
     }
 
     private static List<Entity> createTrees(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
-        RawModel treeModel = OBJLoader.loadObjModel(OBJECT_DIR + "lowPolyTree", loader);
+        RawModel treeModel = ObjLoader.loadObjModel(OBJECT_DIR + "lowPolyTree", loader);
         ModelTexture treeTexture = new ModelTexture(loader.loadTexture(OBJECT_DIR + "lowPolyTree"));
         List<Entity> trees = generateRandomEntities(treeModel, treeTexture, 1, world, count);
         entities.put(treeModel, trees);
@@ -157,7 +166,7 @@ public class MainGameLoop {
     }
 
     private static List<Entity> createBunnies(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
-        RawModel bunnyModel = OBJLoader.loadObjModel(OBJECT_DIR + "bunny", loader);
+        RawModel bunnyModel = ObjLoader.loadObjModel(OBJECT_DIR + "bunny", loader);
         ModelTexture bunnyTexture = new ModelTexture(loader.loadTexture(OBJECT_DIR + "white"));
         List<Entity> bunnies = generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, world, count);
         entities.put(bunnyModel, bunnies);
@@ -165,7 +174,7 @@ public class MainGameLoop {
     }
 
     private static Player createPlayer(Loader loader) {
-        RawModel playerModel = OBJLoader.loadObjModel(OBJECT_DIR + "bunny", loader);
+        RawModel playerModel = ObjLoader.loadObjModel(OBJECT_DIR + "bunny", loader);
         ModelTexture playerTexture = new ModelTexture(loader.loadTexture(OBJECT_DIR + "lightBlue"));
         return new Player(
                 new TexturedModel(playerModel, playerTexture),
