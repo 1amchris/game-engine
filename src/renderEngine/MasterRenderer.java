@@ -9,13 +9,9 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import shaders.StaticShader;
-import shaders.TerrainShader;
+import textures.GuiTexture;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MasterRenderer {
 
@@ -27,21 +23,20 @@ public class MasterRenderer {
 
     private Matrix4f projectionMatrix;
 
-    private StaticShader entityShader;
     private EntityRenderer entityRenderer;
     private TerrainRenderer terrainRenderer;
-    private TerrainShader terrainShader;
+    private GuiRenderer guiRenderer;
 
-    private Map<TexturedModel, List<Entity>> entities = new HashMap<>();
-    private List<Terrain> terrains = new ArrayList<>();
+    private final Map<TexturedModel, List<Entity>> entities = new HashMap<>();
+    private final List<Terrain> terrains = new ArrayList<>();
+    private final List<GuiTexture> guis = new ArrayList<>();
 
-    public MasterRenderer() {
+    public MasterRenderer(EntityRenderer entityRenderer, GuiRenderer guiRenderer, TerrainRenderer terrainRenderer) {
         enableCulling();
         createProjectionMatrix();
-        this.entityShader = new StaticShader();
-        this.entityRenderer = new EntityRenderer(entityShader, projectionMatrix);
-        this.terrainShader = new TerrainShader();
-        this.terrainRenderer = new TerrainRenderer(terrainShader, projectionMatrix);
+        setupRenderer(entityRenderer);
+        setupRenderer(guiRenderer);
+        setupRenderer(terrainRenderer);
     }
 
     public static void enableCulling() {
@@ -54,28 +49,39 @@ public class MasterRenderer {
     }
 
     public void render(Light sun, Camera camera) {
-        prepare();
+        beforeRender();
 
-        entityShader.start();
-        entityShader.loadLight(sun);
-        entityShader.loadViewMatrix(camera);
-        entityShader.loadSkyColour(SKY_COLOUR);
+        entityRenderer.start(sun, camera, SKY_COLOUR);
         entityRenderer.render(entities);
-        entityShader.stop();
+        entityRenderer.stop();
 
-        terrainShader.start();
-        terrainShader.loadLight(sun);
-        terrainShader.loadViewMatrix(camera);
-        terrainShader.loadSkyColour(SKY_COLOUR);
+        terrainRenderer.start(sun, camera, SKY_COLOUR);
         terrainRenderer.render(terrains);
-        terrainShader.stop();
+        terrainRenderer.stop();
 
-        terrains.clear();
-        entities.clear();
+        guiRenderer.render(guis);
+
+        afterRender();
+    }
+
+    public void processGui(GuiTexture gui) {
+        guis.add(gui);
+    }
+
+    public void processGuis(Collection<GuiTexture> guis) {
+        for (GuiTexture gui: guis) {
+            processGui(gui);
+        }
     }
 
     public void processTerrain(Terrain terrain) {
         terrains.add(terrain);
+    }
+
+    public void processTerrains(Collection<Terrain> terrains) {
+        for (Terrain terrain: terrains) {
+            processTerrain(terrain);
+        }
     }
 
     public void processEntity(Entity entity) {
@@ -90,15 +96,10 @@ public class MasterRenderer {
         }
     }
 
-    public void prepare() {
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glClearColor(SKY_COLOUR.x, SKY_COLOUR.y, SKY_COLOUR.z, 1);
-    }
-
-    public void cleanUp() {
-        entityShader.cleanUp();
-        terrainShader.cleanUp();
+    public void processEntities(Collection<Entity> entities) {
+        for (Entity entity: entities) {
+            processEntity(entity);
+        }
     }
 
     private void createProjectionMatrix() {
@@ -114,5 +115,31 @@ public class MasterRenderer {
         projectionMatrix.m23 = -1;
         projectionMatrix.m32 = -((2 * NEAR_PLANE * FAR_PLANE) / frustum_length);
         projectionMatrix.m33 = 0;
+    }
+
+    private void setupRenderer(EntityRenderer renderer) {
+        renderer.setProjectionMatrix(projectionMatrix);
+        this.entityRenderer = renderer;
+    }
+
+    private void setupRenderer(GuiRenderer renderer) {
+        this.guiRenderer = renderer;
+    }
+
+    private void setupRenderer(TerrainRenderer renderer) {
+        renderer.setProjectionMatrix(projectionMatrix);
+        this.terrainRenderer = renderer;
+    }
+
+    private void beforeRender() {
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+        GL11.glClearColor(SKY_COLOUR.x, SKY_COLOUR.y, SKY_COLOUR.z, 1);
+    }
+
+    private void afterRender() {
+        entities.clear();
+        guis.clear();
+        terrains.clear();
     }
 }

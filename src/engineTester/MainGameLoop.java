@@ -8,6 +8,9 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderEngine.*;
+import shaders.GuiShader;
+import shaders.StaticShader;
+import shaders.TerrainShader;
 import textures.GuiTexture;
 import textures.ModelTexture;
 import textures.TerrainTexture;
@@ -23,7 +26,7 @@ public class MainGameLoop {
     private static final String OBJECT_DIR = "objects" + File.separator;
     private static final String TERRAIN_DIR = "terrain" + File.separator;
 
-    private static final String TERRAIN_BLEND_MAP_FILENAME =  TERRAIN_DIR + "blendMap";
+    private static final String TERRAIN_BLEND_MAP_FILENAME = TERRAIN_DIR + "blendMap";
     private static final String TERRAIN_HEIGHT_MAP_FILENAME = TERRAIN_DIR + "heightMap";
 
     private static final Integer WORLD_SIZE = 4;
@@ -34,11 +37,54 @@ public class MainGameLoop {
         DisplayManager.createDisplay();
 
         Loader loader = new Loader();
-        MasterRenderer renderer = new MasterRenderer();
         Light light = new Light(new Vector3f(500, 2000, 800), new Vector3f(1, 1, 1));
+
+        StaticShader entityShader = new StaticShader();
+        EntityRenderer entityRenderer = new EntityRenderer(entityShader);
+        GuiShader guiShader = new GuiShader();
+        GuiRenderer guiRenderer = new GuiRenderer(guiShader, loader);
+        TerrainShader terrainShader = new TerrainShader();
+        TerrainRenderer terrainRenderer = new TerrainRenderer(terrainShader);
+        MasterRenderer renderer = new MasterRenderer(entityRenderer, guiRenderer, terrainRenderer);
+
+        Map<Integer, Map<Integer, Terrain>> world = createWorld(loader);
+        Map<RawModel, List<Entity>> entities = createStaticEntities(loader, world);
         Player player = createPlayer(loader);
         Camera camera = new Camera(player);
 
+        List<GuiTexture> guis = new ArrayList<>();
+        GuiTexture healthBar = new GuiTexture(loader.loadTexture(GUI_DIR + "health"),
+                new Vector2f(-.8f, .95f), new Vector2f(0.2f, 0.2f));
+        guis.add(healthBar);
+
+        while (!Display.isCloseRequested()) {
+            camera.move();
+            player.move(getTerrainPlayerIsStandingOn(player, world));
+//            recenterMouse();
+
+            for (Map<Integer, Terrain> terrains : world.values()) {
+                renderer.processTerrains(terrains.values());
+            }
+
+            renderer.processEntity(player);
+            for (List<Entity> values : entities.values()) {
+                renderer.processEntities(values);
+            }
+
+            renderer.processGuis(guis);
+
+            renderer.render(light, camera);
+            DisplayManager.updateDisplay();
+        }
+
+        entityShader.cleanUp();
+        guiShader.cleanUp();
+        terrainShader.cleanUp();
+        loader.cleanUp();
+        DisplayManager.closeDisplay();
+    }
+
+    private static Map<Integer, Map<Integer, Terrain>> createWorld(Loader loader) {
         TerrainTexturePack terrainTexturePack = new TerrainTexturePack(
                 new TerrainTexture(loader.loadTexture(TERRAIN_DIR + "grassy")),
                 new TerrainTexture(loader.loadTexture(TERRAIN_DIR + "mud")),
@@ -57,43 +103,7 @@ public class MainGameLoop {
                 world.get(gridX).put(gridZ, new Terrain(gridX, gridZ, loader, terrainTexturePack, terrainBlendMap, TERRAIN_HEIGHT_MAP_FILENAME));
             }
         }
-
-        Map<RawModel, List<Entity>> entities = generateStaticEntities(loader, world);
-
-        List<GuiTexture> guis = new ArrayList<>();
-        GuiTexture healthBar = new GuiTexture(loader.loadTexture(GUI_DIR + "health"),
-                new Vector2f(-0.75f, -0.85f), new Vector2f(0.2f, 0.2f));
-        guis.add(healthBar);
-
-        GuiRenderer guiRenderer = new GuiRenderer(loader);
-
-        while (!Display.isCloseRequested()) {
-            camera.move();
-            player.move(getTerrainPlayerIsStandingOn(player, world));
-//            recenterMouse();
-
-            for (Map<Integer, Terrain> terrains : world.values()) {
-                for (Terrain terrain : terrains.values()) {
-                    renderer.processTerrain(terrain);
-                }
-            }
-
-            renderer.processEntity(player);
-            for (List<Entity> values : entities.values()) {
-                for (Entity entity : values) {
-                    renderer.processEntity(entity);
-                }
-            }
-
-            renderer.render(light, camera);
-            guiRenderer.render(guis);
-            DisplayManager.updateDisplay();
-        }
-
-        guiRenderer.cleanUp();
-        renderer.cleanUp();
-        loader.cleanUp();
-        DisplayManager.closeDisplay();
+        return world;
     }
 
     private static void setupNatives() {
@@ -125,7 +135,7 @@ public class MainGameLoop {
         return world.get(terrainX).get(terrainZ);
     }
 
-    private static Map<RawModel, List<Entity>> generateStaticEntities(Loader loader, Map<Integer, Map<Integer, Terrain>> world) {
+    private static Map<RawModel, List<Entity>> createStaticEntities(Loader loader, Map<Integer, Map<Integer, Terrain>> world) {
         Map<RawModel, List<Entity>> entities = new Hashtable<>();
 
         createFern(loader, entities, world, 2000);

@@ -1,10 +1,13 @@
 package renderEngine;
 
+import entities.Camera;
 import entities.Entity;
+import entities.Light;
 import models.RawModel;
 import models.TexturedModel;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
 import shaders.StaticShader;
 import textures.ModelTexture;
 import toolbox.Maths;
@@ -16,10 +19,24 @@ public class EntityRenderer {
 
     private final StaticShader shader;
 
-    public EntityRenderer(StaticShader shader, Matrix4f projectionMatrix) {
+    public EntityRenderer(StaticShader shader) {
         this.shader = shader;
+    }
+
+    public void setProjectionMatrix(Matrix4f projectionMatrix) {
         shader.start();
         shader.loadProjectionMatrix(projectionMatrix);
+        shader.stop();
+    }
+
+    public void start(Light light, Camera camera, Vector3f skyColour) {
+        shader.start();
+        shader.loadLight(light);
+        shader.loadViewMatrix(camera);
+        shader.loadSkyColour(skyColour);
+    }
+
+    public void stop() {
         shader.stop();
     }
 
@@ -45,10 +62,12 @@ public class EntityRenderer {
 
         ModelTexture texture = model.getTexture();
         shader.loadAtlasGridSize(texture.getAtlasGridSize());
+        shader.loadTextureProperties(texture);
+
         if (texture.isTransparent()) {
             MasterRenderer.disableCulling();
         }
-        shader.loadTextureProperties(texture);
+
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getID());
     }

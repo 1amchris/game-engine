@@ -1,5 +1,7 @@
 package renderEngine;
 
+import entities.Camera;
+import entities.Light;
 import entities.Terrain;
 import models.RawModel;
 import org.lwjgl.opengl.GL11;
@@ -16,13 +18,29 @@ import java.util.List;
 
 public class TerrainRenderer {
 
-    private TerrainShader shader;
+    private final TerrainShader shader;
 
-    public TerrainRenderer(TerrainShader shader, Matrix4f projectionMatrix) {
+    public TerrainRenderer(TerrainShader shader) {
         this.shader = shader;
         shader.start();
-        shader.loadProjectionMatrix(projectionMatrix);
         shader.connectTextureUnits();
+        shader.stop();
+    }
+
+    public void setProjectionMatrix(Matrix4f projectionMatrix) {
+        shader.start();
+        shader.loadProjectionMatrix(projectionMatrix);
+        shader.stop();
+    }
+
+    public void start(Light light, Camera camera, Vector3f skyColour) {
+        shader.start();
+        shader.loadLight(light);
+        shader.loadViewMatrix(camera);
+        shader.loadSkyColour(skyColour);
+    }
+
+    public void stop() {
         shader.stop();
     }
 
