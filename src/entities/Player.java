@@ -7,11 +7,10 @@ import renderEngine.DisplayManager;
 
 public class Player extends Entity {
 
-    private static final float RUN_SPEED = 20;
+    private static final float RUN_SPEED = 50;
     private static final float TURN_SPEED = 160;
     private static final float GRAVITY = -50;
     private static final float JUMP_POWER = 20;
-    private static final float TERRAIN_HEIGHT = 0;
 
     private float horizontalVelocity = 0;
     private float verticalVelocity = 0;
@@ -22,7 +21,7 @@ public class Player extends Entity {
         super(model, position, rotation, scale);
     }
 
-    public void move() {
+    public void move(Terrain terrain) {
         checkInputs();
         increaseRotation(new Vector3f(0, turnSpeed * DisplayManager.getDeltaTime(), 0));
         float distance = horizontalVelocity * DisplayManager.getDeltaTime();
@@ -32,9 +31,10 @@ public class Player extends Entity {
         float distanceY = verticalVelocity * DisplayManager.getDeltaTime();
         increasePosition(new Vector3f(distanceX, distanceY, distanceZ));
 
-        if (getPosition().y < TERRAIN_HEIGHT) {
+        float terrainHeight = terrain.getHeightOfTerrain(getPosition().x, getPosition().z);
+        if (getPosition().y < terrainHeight) {
             verticalVelocity = 0;
-            getPosition().y = TERRAIN_HEIGHT;
+            getPosition().y = terrainHeight;
             canJump = true;
         }
     }

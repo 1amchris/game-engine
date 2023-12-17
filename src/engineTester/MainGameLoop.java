@@ -20,6 +20,11 @@ import java.util.*;
 
 public class MainGameLoop {
 
+    private static final String TERRAIN_BLEND_MAP_FILENAME = "terrain" + File.separator + "blendMap";
+    private static final String TERRAIN_HEIGHT_MAP_FILENAME = "terrain" + File.separator + "heightMap";
+
+    private static final Integer WORLD_SIZE = 4;
+
     public static void main(String[] main) {
 
         setupNatives();
@@ -27,7 +32,7 @@ public class MainGameLoop {
 
         Loader loader = new Loader();
         MasterRenderer renderer = new MasterRenderer();
-        Light light = new Light(new Vector3f(1500, 2000, 1500), new Vector3f(1, 1, 1));
+        Light light = new Light(new Vector3f(400, 2000, 200), new Vector3f(1, 1, 1));
         Player player = createPlayer(loader);
         Camera camera = new Camera(player);
 
@@ -37,24 +42,31 @@ public class MainGameLoop {
             new TerrainTexture(loader.loadTexture("terrain" + File.separator + "flowers")),
             new TerrainTexture(loader.loadTexture("terrain" + File.separator + "path"))
         );
-        TerrainTexture terrainBlendMap = new TerrainTexture(loader.loadTexture("terrain" + File.separator + "blendMap"));
+        TerrainTexture terrainBlendMap = new TerrainTexture(loader.loadTexture(TERRAIN_BLEND_MAP_FILENAME));
 
-        Terrain terrain1 = new Terrain(0, 0, loader, terrainTexturePack, terrainBlendMap);
-        Terrain terrain2 = new Terrain(1, 0, loader, terrainTexturePack, terrainBlendMap);
-        Terrain terrain3 = new Terrain(0, 1, loader, terrainTexturePack, terrainBlendMap);
-        Terrain terrain4 = new Terrain(1, 1, loader, terrainTexturePack, terrainBlendMap);
+        Map<Integer, Map<Integer, Terrain>> world = new HashMap<>();
+        final int HALF_WORLD_SIZE = WORLD_SIZE / 2;
+        for (int i = 0; i < WORLD_SIZE; i++) {
+            int gridX = i - HALF_WORLD_SIZE;
+            world.put(gridX, new HashMap<>());
+            for (int j = 0; j < WORLD_SIZE; j++) {
+                int gridZ = j - HALF_WORLD_SIZE;
+                world.get(gridX).put(gridZ, new Terrain(gridX, gridZ, loader, terrainTexturePack, terrainBlendMap, TERRAIN_HEIGHT_MAP_FILENAME));
+            }
+        }
 
-        Map<RawModel, List<Entity>> entities = generateStaticEntities(loader);
+        Map<RawModel, List<Entity>> entities = generateStaticEntities(loader, world);
 
         while (!Display.isCloseRequested()) {
             camera.move();
-            player.move();
+            player.move(getTerrainPlayerIsStandingOn(player, world));
 //            recenterMouse();
 
-            renderer.processTerrain(terrain1);
-            renderer.processTerrain(terrain2);
-            renderer.processTerrain(terrain3);
-            renderer.processTerrain(terrain4);
+            for (Map<Integer, Terrain> terrains: world.values()) {
+                for (Terrain terrain: terrains.values()) {
+                    renderer.processTerrain(terrain);
+                }
+            }
 
             renderer.processEntity(player);
             for (List<Entity> values: entities.values()) {
@@ -94,59 +106,66 @@ public class MainGameLoop {
         }
     }
 
-    private static Map<RawModel, List<Entity>> generateStaticEntities(Loader loader) {
+    private static Terrain getTerrainPlayerIsStandingOn(Player player, Map<Integer, Map<Integer, Terrain>> world) {
+        Vector3f playerPosition = player.getPosition();
+        int terrainX = (int) Math.floor(playerPosition.x / Terrain.SIZE);
+        int terrainZ = (int) Math.floor(playerPosition.z / Terrain.SIZE);
+        return world.get(terrainX).get(terrainZ);
+    }
+
+    private static Map<RawModel, List<Entity>> generateStaticEntities(Loader loader, Map<Integer, Map<Integer, Terrain>> world) {
         Map<RawModel, List<Entity>> entities = new Hashtable<>();
 
-        createFern(loader, entities, 200);
-        createGrass(loader, entities, 100);
-        createFlowers(loader, entities, 100);
-        createTrees(loader, entities, 100);
-        createBunnies(loader, entities, 20);
+        createFern(loader, entities, world, 2000);
+        createGrass(loader, entities, world, 3000);
+        createFlowers(loader, entities, world, 1000);
+        createTrees(loader, entities, world, 1000);
+        createBunnies(loader, entities, world, 200);
 
         return entities;
     }
 
-    private static List<Entity> createFern(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static List<Entity> createFern(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
         RawModel fernModel = OBJLoader.loadObjModel("fern", loader);
         ModelTexture fernTexture = new ModelTexture(loader.loadTexture("fern"));
         fernTexture.setTransparency(true);
-        List<Entity> ferns = generateRandomEntities(fernModel, fernTexture, 1, count);
+        List<Entity> ferns = generateRandomEntities(fernModel, fernTexture, 1, world, count);
         entities.put(fernModel, ferns);
         return ferns;
     }
 
-    private static List<Entity> createGrass(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static List<Entity> createGrass(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
         RawModel grassModel = OBJLoader.loadObjModel("grassModel", loader);
         ModelTexture grassTexture = new ModelTexture(loader.loadTexture("grassTexture"));
         grassTexture.setTransparency(true);
         grassTexture.setUseFakeLighting(true);
-        List<Entity> grasses = generateRandomEntities(grassModel, grassTexture, 2, count);
+        List<Entity> grasses = generateRandomEntities(grassModel, grassTexture, 2, world, count);
         entities.put(grassModel, grasses);
         return grasses;
     }
 
-    private static List<Entity> createFlowers(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static List<Entity> createFlowers(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
         RawModel plantModel = OBJLoader.loadObjModel("grassModel", loader);
         ModelTexture flowerTexture = new ModelTexture(loader.loadTexture("flower"));
         flowerTexture.setTransparency(true);
         flowerTexture.setUseFakeLighting(true);
-        List<Entity> flowers = generateRandomEntities(plantModel, flowerTexture, 3, count);
+        List<Entity> flowers = generateRandomEntities(plantModel, flowerTexture, 3, world, count);
         entities.put(plantModel, flowers);
         return flowers;
     }
 
-    private static List<Entity> createTrees(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static List<Entity> createTrees(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
         RawModel treeModel = OBJLoader.loadObjModel("lowPolyTree", loader);
         ModelTexture treeTexture = new ModelTexture(loader.loadTexture("lowPolyTree"));
-        List<Entity> trees = generateRandomEntities(treeModel, treeTexture, 1, count);
+        List<Entity> trees = generateRandomEntities(treeModel, treeTexture, 1, world, count);
         entities.put(treeModel, trees);
         return trees;
     }
 
-    private static List<Entity> createBunnies(Loader loader, Map<RawModel, List<Entity>> entities, int count) {
+    private static List<Entity> createBunnies(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
         RawModel bunnyModel = OBJLoader.loadObjModel("bunny", loader);
         ModelTexture bunnyTexture = new ModelTexture(loader.loadTexture("white"));
-        List<Entity> bunnies = generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, count);
+        List<Entity> bunnies = generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, world, count);
         entities.put(bunnyModel, bunnies);
         return bunnies;
     }
@@ -154,21 +173,26 @@ public class MainGameLoop {
     private static Player createPlayer(Loader loader) {
         RawModel playerModel = OBJLoader.loadObjModel("bunny", loader);
         ModelTexture playerTexture = new ModelTexture(loader.loadTexture("lightBlue"));
-        Player player = new Player(
+        return new Player(
                 new TexturedModel(playerModel, playerTexture),
-                new Vector3f(0, 0, -25),
+                new Vector3f(0, 0, 0),
                 new Vector3f(0, 0, 0), 0.25f);
-        return player;
     }
 
-    private static List<Entity> generateRandomEntities(RawModel model, ModelTexture texture, float scale, int count) {
+    private static List<Entity> generateRandomEntities(RawModel model, ModelTexture texture, float scale, Map<Integer, Map<Integer, Terrain>> world, int count) {
         Random random = new Random();
 
         List<Entity> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
+            Map<Integer, Terrain> randomTerrainStrip = new ArrayList<>(world.values()).get(random.nextInt(world.size()));
+            Terrain randomTerrain = new ArrayList<>(randomTerrainStrip.values()).get(random.nextInt(randomTerrainStrip.size()));
+
+            float worldX = randomTerrain.getX() + random.nextFloat() * Terrain.SIZE;
+            float worldZ = randomTerrain.getZ() + random.nextFloat() * Terrain.SIZE;
+
             Entity entity = new Entity(
                     new TexturedModel(model, texture),
-                    new Vector3f(random.nextFloat() * 500 - 250, 0, random.nextFloat() * 500 - 250),
+                    new Vector3f(worldX, randomTerrain.getHeightOfTerrain(worldX, worldZ), worldZ),
                     new Vector3f(0, random.nextFloat() * 360, 0), scale);
             result.add(entity);
         }
