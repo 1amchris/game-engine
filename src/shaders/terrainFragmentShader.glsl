@@ -2,7 +2,7 @@
 
 in vec2 pass_textureCoordinates;
 in vec3 surfaceNormal;
-in vec3 toLightVector;
+in vec3 toLightVector[4];
 in vec3 toCameraVector;
 in float visibility;
 
@@ -14,7 +14,8 @@ uniform sampler2D gTexture;
 uniform sampler2D bTexture;
 uniform sampler2D blendMap;
 
-uniform vec3 lightColour;
+uniform vec3 lightColour[4];
+uniform vec3 lightAttenuation[4];
 uniform float shineDamper;
 uniform float reflectivity;
 uniform vec3 skyColour;
@@ -31,18 +32,28 @@ void main(void) {
     vec4 terrainColour = backgroundTextureColour + rTextureColour + gTextureColour + bTextureColour;
 
     vec3 unitNormalVector = normalize(surfaceNormal);
-    vec3 unitLightVector = normalize(toLightVector);
     vec3 unitCameraVector = normalize(toCameraVector);
 
-    float brightness = max(0.2, dot(unitNormalVector, unitLightVector));
-    vec3 diffuse = brightness * lightColour;
+    vec3 totalDiffuse = vec3(0.0);
+    vec3 totalSpecular = vec3(0.0);
 
-    vec3 lightDirection = -unitLightVector;
-    vec3 reflectedLightDirection = reflect(lightDirection, unitNormalVector);
-    float specularFactor = max(0.0, dot(reflectedLightDirection, unitCameraVector));
-    float dampedFactor = pow(specularFactor, shineDamper);
-    vec3 finalSpecular = dampedFactor * reflectivity * lightColour;
+    for (int i = 0; i < 4; i++) {
+        float distanceToLight = length(toLightVector[i]);
+        float attenuationFactor = lightAttenuation[i].x
+                                + lightAttenuation[i].y * distanceToLight
+                                + lightAttenuation[i].z * distanceToLight * distanceToLight;
+        vec3 unitLightVector = normalize(toLightVector[i]);
+        float brightness = max(0.0, dot(unitNormalVector, unitLightVector));
+        vec3 lightDirection = -unitLightVector;
+        vec3 reflectedLightDirection = reflect(lightDirection, unitNormalVector);
+        float specularFactor = max(0.0, dot(reflectedLightDirection, unitCameraVector));
+        float dampedFactor = pow(specularFactor, shineDamper);
+        totalDiffuse = totalDiffuse + brightness * lightColour[i] / attenuationFactor;
+        totalSpecular = totalSpecular + dampedFactor * reflectivity * lightColour[i] / attenuationFactor;
+    }
 
-    out_Colour = vec4(diffuse, 1.0) * terrainColour + vec4(finalSpecular, 1.0);
+    totalDiffuse = max(vec3(0.2), totalDiffuse);
+
+    out_Colour = vec4(totalDiffuse, 1.0) * terrainColour + vec4(totalSpecular, 1.0);
     out_Colour = mix(vec4(skyColour, 1.0), out_Colour, visibility);
 }

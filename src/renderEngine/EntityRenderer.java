@@ -2,7 +2,7 @@ package renderEngine;
 
 import entities.Camera;
 import entities.Entity;
-import entities.Light;
+import entities.LightSource;
 import models.RawModel;
 import models.TexturedModel;
 import org.lwjgl.opengl.*;
@@ -29,9 +29,9 @@ public class EntityRenderer {
         shader.stop();
     }
 
-    public void start(Light light, Camera camera, Vector3f skyColour) {
+    public void start(List<LightSource> lightSources, Camera camera, Vector3f skyColour) {
         shader.start();
-        shader.loadLight(light);
+        shader.loadLights(lightSources);
         shader.loadViewMatrix(camera);
         shader.loadSkyColour(skyColour);
     }

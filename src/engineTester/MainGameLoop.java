@@ -37,7 +37,8 @@ public class MainGameLoop {
         DisplayManager.createDisplay();
 
         Loader loader = new Loader();
-        Light light = new Light(new Vector3f(500, 2000, 800), new Vector3f(1, 1, 1));
+        List<LightSource> lightSources = new ArrayList<>();
+        lightSources.add(new LightSource(new Vector3f(0, 1000, -7000), new Vector3f(0.4f, 0.4f, 0.4f)));
 
         StaticShader entityShader = new StaticShader();
         EntityRenderer entityRenderer = new EntityRenderer(entityShader);
@@ -52,6 +53,16 @@ public class MainGameLoop {
         Player player = createPlayer(loader);
         Camera camera = new Camera(player);
 
+        List<Entity> lamps = new ArrayList<>();
+        TexturedModel lampModel = new TexturedModel(
+            ObjLoader.loadObjModel(OBJECT_DIR + "lamp", loader),
+            new ModelTexture(loader.loadTexture(OBJECT_DIR + "lamp"))
+        );
+        createLamp(85, -53, lampModel, new Vector3f(2, 0, 2), lamps, lightSources, world);
+        createLamp(70, -150, lampModel, new Vector3f(0, 2, 2), lamps, lightSources, world);
+        createLamp(93, -115, lampModel, new Vector3f(2, 2, 0), lamps, lightSources, world);
+        entities.put(lampModel.getRawModel(), lamps);
+
         List<GuiTexture> guis = new ArrayList<>();
         GuiTexture healthBar = new GuiTexture(loader.loadTexture(GUI_DIR + "health"),
                 new Vector2f(-.8f, .95f), new Vector2f(0.2f, 0.2f));
@@ -59,7 +70,7 @@ public class MainGameLoop {
 
         while (!Display.isCloseRequested()) {
             camera.move();
-            player.move(getTerrainPlayerIsStandingOn(player, world));
+            player.move(getTerrainAtPosition(player.getPosition(), world));
 //            recenterMouse();
 
             for (Map<Integer, Terrain> terrains : world.values()) {
@@ -73,7 +84,7 @@ public class MainGameLoop {
 
             renderer.processGuis(guis);
 
-            renderer.render(light, camera);
+            renderer.render(lightSources, camera);
             DisplayManager.updateDisplay();
         }
 
@@ -103,7 +114,27 @@ public class MainGameLoop {
                 world.get(gridX).put(gridZ, new Terrain(gridX, gridZ, loader, terrainTexturePack, terrainBlendMap, TERRAIN_HEIGHT_MAP_FILENAME));
             }
         }
+
         return world;
+    }
+
+    private static Entity createLamp(float x, float z, TexturedModel model, Vector3f lightColour,
+                                   List<Entity> lamps, List<LightSource> lightSources,
+                                   Map<Integer, Map<Integer, Terrain>> world) {
+        Terrain terrainAtPosition = getTerrainAtPosition(new Vector3f(x, 0, z), world);
+        float terrainHeightAtPosition = terrainAtPosition.getHeightOfTerrain(x, z);
+        LightSource lightSource = new LightSource(
+                new Vector3f(x, terrainHeightAtPosition + 10, z),
+                lightColour, new Vector3f(1, 0.01f, 0.002f));
+        lightSources.add(lightSource);
+
+        Entity lamp = new Entity(
+                model,
+                new Vector3f(x, terrainHeightAtPosition, z),
+                new Vector3f(0, new Random().nextFloat() * 360, 0), 1);
+        lamps.add(lamp);
+
+        return lamp;
     }
 
     private static void setupNatives() {
@@ -128,10 +159,9 @@ public class MainGameLoop {
         }
     }
 
-    private static Terrain getTerrainPlayerIsStandingOn(Player player, Map<Integer, Map<Integer, Terrain>> world) {
-        Vector3f playerPosition = player.getPosition();
-        int terrainX = (int) Math.floor(playerPosition.x / Terrain.SIZE);
-        int terrainZ = (int) Math.floor(playerPosition.z / Terrain.SIZE);
+    private static Terrain getTerrainAtPosition(Vector3f position, Map<Integer, Map<Integer, Terrain>> world) {
+        int terrainX = (int) Math.floor(position.x / Terrain.SIZE);
+        int terrainZ = (int) Math.floor(position.z / Terrain.SIZE);
         return world.get(terrainX).get(terrainZ);
     }
 
@@ -192,7 +222,8 @@ public class MainGameLoop {
                 new Vector3f(0, 0, 0), 0.25f);
     }
 
-    private static List<Entity> generateRandomEntities(RawModel model, ModelTexture texture, float scale, Map<Integer, Map<Integer, Terrain>> world, int count) {
+    private static List<Entity> generateRandomEntities(RawModel model, ModelTexture texture, float scale,
+                                                       Map<Integer, Map<Integer, Terrain>> world, int count) {
         Random random = new Random();
 
         List<Entity> result = new ArrayList<>();
@@ -202,10 +233,11 @@ public class MainGameLoop {
 
             float worldX = randomTerrain.getX() + random.nextFloat() * Terrain.SIZE;
             float worldZ = randomTerrain.getZ() + random.nextFloat() * Terrain.SIZE;
+            float worldY = randomTerrain.getHeightOfTerrain(worldX, worldZ);
 
             Entity entity = new Entity(
                     new TexturedModel(model, texture, random.nextInt(texture.getTexturesCount())),
-                    new Vector3f(worldX, randomTerrain.getHeightOfTerrain(worldX, worldZ), worldZ),
+                    new Vector3f(worldX, worldY, worldZ),
                     new Vector3f(0, random.nextFloat() * 360, 0), scale);
             result.add(entity);
         }

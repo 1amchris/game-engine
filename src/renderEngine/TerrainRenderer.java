@@ -1,7 +1,7 @@
 package renderEngine;
 
 import entities.Camera;
-import entities.Light;
+import entities.LightSource;
 import entities.Terrain;
 import models.RawModel;
 import org.lwjgl.opengl.GL11;
@@ -33,9 +33,9 @@ public class TerrainRenderer {
         shader.stop();
     }
 
-    public void start(Light light, Camera camera, Vector3f skyColour) {
+    public void start(List<LightSource> lightSources, Camera camera, Vector3f skyColour) {
         shader.start();
-        shader.loadLight(light);
+        shader.loadLights(lightSources);
         shader.loadViewMatrix(camera);
         shader.loadSkyColour(skyColour);
     }

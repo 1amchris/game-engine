@@ -2,7 +2,7 @@ package renderEngine;
 
 import entities.Camera;
 import entities.Entity;
-import entities.Light;
+import entities.LightSource;
 import entities.Terrain;
 import models.TexturedModel;
 import org.lwjgl.opengl.Display;
@@ -19,7 +19,8 @@ public class MasterRenderer {
     private static final float NEAR_PLANE = 0.01f;
     private static final float FAR_PLANE = 800;
 
-    private static final Vector3f SKY_COLOUR = new Vector3f(192/255f, 240/255f, 240/255f);
+//    private static final Vector3f SKY_COLOUR = new Vector3f(192/255f, 240/255f, 240/255f);
+    private static final Vector3f SKY_COLOUR = new Vector3f(64/255f, 80/255f, 80/255f);
 
     private Matrix4f projectionMatrix;
 
@@ -48,14 +49,14 @@ public class MasterRenderer {
         GL11.glDisable(GL11.GL_CULL_FACE);
     }
 
-    public void render(Light sun, Camera camera) {
+    public void render(List<LightSource> lightSources, Camera camera) {
         beforeRender();
 
-        entityRenderer.start(sun, camera, SKY_COLOUR);
+        entityRenderer.start(lightSources, camera, SKY_COLOUR);
         entityRenderer.render(entities);
         entityRenderer.stop();
 
-        terrainRenderer.start(sun, camera, SKY_COLOUR);
+        terrainRenderer.start(lightSources, camera, SKY_COLOUR);
         terrainRenderer.render(terrains);
         terrainRenderer.stop();
 
