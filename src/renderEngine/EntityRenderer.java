@@ -8,7 +8,7 @@ import models.TexturedModel;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import shaders.StaticShader;
+import shaders.entities.StaticShader;
 import textures.ModelTexture;
 import toolbox.Maths;
 

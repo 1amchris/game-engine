@@ -1,17 +1,19 @@
-package shaders;
+package shaders.skyboxes;
 
 import entities.Camera;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import renderEngine.DisplayManager;
+import shaders.ShaderProgram;
 import toolbox.Maths;
 
 import java.io.File;
 
 public class SkyboxShader extends ShaderProgram {
 
-    private static final String VERTEX_FILE = "src" + File.separator + "shaders" + File.separator + "skyboxVertexShader.glsl";
-    private static final String FRAGMENT_FILE = "src" + File.separator + "shaders" + File.separator + "skyboxFragmentShader.glsl";
+    private static final String BASE_PATH = "src" + File.separator + "shaders" + File.separator + "skyboxes" + File.separator;
+    private static final String VERTEX_FILE = BASE_PATH + "skyboxVertexShader.glsl";
+    private static final String FRAGMENT_FILE = BASE_PATH + "skyboxFragmentShader.glsl";
 
     private static final float ROTATION_SPEED = 0.3f;
 

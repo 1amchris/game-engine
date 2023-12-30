@@ -1,4 +1,4 @@
-package shaders;
+package shaders.entities;
 
 import entities.Camera;
 import entities.EmptyLightSource;
@@ -6,6 +6,7 @@ import entities.LightSource;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import shaders.ShaderProgram;
 import textures.ModelTexture;
 import toolbox.Maths;
 
@@ -14,8 +15,9 @@ import java.util.List;
 
 public class StaticShader extends ShaderProgram {
 
-    private static final String VERTEX_FILE = "src" + File.separator + "shaders" + File.separator + "entityVertexShader.glsl";
-    private static final String FRAGMENT_FILE = "src" + File.separator + "shaders" + File.separator + "entityFragmentShader.glsl";
+    private static final String BASE_PATH = "src" + File.separator + "shaders" + File.separator + "entities" + File.separator;
+    private static final String VERTEX_FILE = BASE_PATH + "entityVertexShader.glsl";
+    private static final String FRAGMENT_FILE = BASE_PATH + "entityFragmentShader.glsl";
 
     private static final int MAX_LIGHTS = 4;
 
