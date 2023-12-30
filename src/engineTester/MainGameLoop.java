@@ -16,6 +16,7 @@ import textures.GuiTexture;
 import textures.ModelTexture;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
+import toolbox.MousePicker;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -72,10 +73,15 @@ public class MainGameLoop {
                 new Vector2f(-.8f, .95f), new Vector2f(0.2f, 0.2f));
         guis.add(healthBar);
 
+        MousePicker mousePicker = new MousePicker(camera, renderer.getProjectionMatrix());
+
         while (!Display.isCloseRequested()) {
             camera.move();
             player.move(getTerrainAtPosition(player.getPosition(), world));
 //            recenterMouse();
+
+            mousePicker.update();
+            System.out.println(mousePicker.getCurrentRay());
 
             for (Map<Integer, Terrain> terrains : world.values()) {
                 renderer.processTerrains(terrains.values());

@@ -31,7 +31,7 @@ public class DisplayManager {
 
         GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-        Mouse.setGrabbed(true);
+//        Mouse.setGrabbed(true);
     }
 
     public static void updateDisplay() {
