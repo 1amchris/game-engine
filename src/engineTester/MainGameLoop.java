@@ -1,25 +1,32 @@
 package engineTester;
 
-import entities.*;
-import models.RawModel;
-import models.TexturedModel;
-import org.lwjgl.input.Mouse;
+import gameObjects.entities.*;
+import gameObjects.renderers.EntityRenderer;
+import gameObjects.shaders.StaticShader;
+import guis.entities.*;
+import guis.renderers.GuiRenderer;
+import guis.shaders.GuiShader;
+import shared.models.*;
+import shared.renderers.*;
+import shared.textures.ModelTexture;
+import skyboxes.renderers.SkyboxRenderer;
+import skyboxes.shaders.SkyboxShader;
+import terrains.entities.*;
+import terrains.renderers.TerrainRenderer;
+import terrains.shaders.TerrainShader;
+
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import renderEngine.*;
-import shaders.guis.GuiShader;
-import shaders.skyboxes.SkyboxShader;
-import shaders.entities.StaticShader;
-import shaders.terrains.TerrainShader;
-import textures.GuiTexture;
-import textures.ModelTexture;
-import textures.TerrainTexture;
-import textures.TerrainTexturePack;
+import water.entities.WaterTile;
+import water.renderers.WaterRenderer;
+import water.shaders.WaterShader;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MainGameLoop {
 
@@ -39,20 +46,26 @@ public class MainGameLoop {
 
         Loader loader = new Loader();
         List<LightSource> lightSources = new ArrayList<>();
-//        lightSources.add(new LightSource(new Vector3f(0, 1000, -7000), new Vector3f(0.4f, 0.4f, 0.4f)));
         lightSources.add(new LightSource(new Vector3f(100, 2000, -700), new Vector3f(1, 1, 1)));
+        MasterRenderer renderer = new MasterRenderer();
 
-        StaticShader entityShader = new StaticShader();
-        EntityRenderer entityRenderer = new EntityRenderer(entityShader);
-        GuiShader guiShader = new GuiShader();
-        GuiRenderer guiRenderer = new GuiRenderer(guiShader, loader);
+        /* World elements */
         SkyboxShader skyboxShader = new SkyboxShader();
-        SkyboxRenderer skyboxRenderer = new SkyboxRenderer(skyboxShader, loader);
+        renderer.setupRenderer(new SkyboxRenderer(skyboxShader, loader));
+
         TerrainShader terrainShader = new TerrainShader();
-        TerrainRenderer terrainRenderer = new TerrainRenderer(terrainShader);
-        MasterRenderer renderer = new MasterRenderer(entityRenderer, guiRenderer, skyboxRenderer, terrainRenderer);
+        renderer.setupRenderer(new TerrainRenderer(terrainShader));
+
+        WaterShader waterShader = new WaterShader();
+        renderer.setupRenderer(new WaterRenderer(waterShader, loader));
 
         Map<Integer, Map<Integer, Terrain>> world = createWorld(loader);
+        List<WaterTile> waterBodies = createWater();
+
+        /*  Game elements */
+        StaticShader entityShader = new StaticShader();
+        renderer.setupRenderer(new EntityRenderer(entityShader));
+
         Map<RawModel, List<Entity>> entities = createStaticEntities(loader, world);
         Player player = createPlayer(loader);
         Camera camera = new Camera(player);
@@ -67,34 +80,33 @@ public class MainGameLoop {
         createLamp(93, -115, lampModel, new Vector3f(2, 2, 0), lamps, lightSources, world);
         entities.put(lampModel.getRawModel(), lamps);
 
+        /* Gui elements */
+        GuiShader guiShader = new GuiShader();
+        renderer.setupRenderer(new GuiRenderer(guiShader, loader));
+
         List<GuiTexture> guis = new ArrayList<>();
         GuiTexture healthBar = new GuiTexture(loader.loadTexture(GUI_DIR + "health"),
                 new Vector2f(-.8f, .95f), new Vector2f(0.2f, 0.2f));
         guis.add(healthBar);
 
+        /*  Game loop */
         while (!Display.isCloseRequested()) {
             camera.move();
             player.move(getTerrainAtPosition(player.getPosition(), world));
 
-            for (Map<Integer, Terrain> terrains : world.values()) {
-                renderer.processTerrains(terrains.values());
-            }
-
-            renderer.processEntity(player);
-            for (List<Entity> values : entities.values()) {
-                renderer.processEntities(values);
-            }
-
-            renderer.processGuis(guis);
-
-            renderer.render(lightSources, camera);
+            renderer.renderScene(
+                    Stream.concat(Stream.of(player), entities.values().stream().flatMap(List::stream)).collect(Collectors.toList()),
+                    world.values().stream().flatMap(terrains -> terrains.values().stream()).collect(Collectors.toList()),
+                    waterBodies, guis, lightSources, camera);
             DisplayManager.updateDisplay();
         }
 
+        /*  Clean up */
+        loader.cleanUp();
         entityShader.cleanUp();
         guiShader.cleanUp();
         terrainShader.cleanUp();
-        loader.cleanUp();
+        waterShader.cleanUp();
         DisplayManager.closeDisplay();
     }
 
@@ -119,6 +131,12 @@ public class MainGameLoop {
         }
 
         return world;
+    }
+
+    private static List<WaterTile> createWater() {
+        List<WaterTile> waterBodies = new ArrayList<>();
+        waterBodies.add(new WaterTile(new Vector3f(-105, -0.5f, 55)));
+        return waterBodies;
     }
 
     private static Entity createLamp(float x, float z, TexturedModel model, Vector3f lightColour,
@@ -153,12 +171,6 @@ public class MainGameLoop {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void recenterMouse() {
-        if (Display.isActive()) {
-            Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
         }
     }
 

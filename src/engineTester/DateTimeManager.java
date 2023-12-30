@@ -1,6 +1,6 @@
 package engineTester;
 
-import renderEngine.DisplayManager;
+import shared.renderers.DisplayManager;
 
 public class DateTimeManager {
 
