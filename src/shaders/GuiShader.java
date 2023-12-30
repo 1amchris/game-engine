@@ -2,10 +2,12 @@ package shaders;
 
 import org.lwjgl.util.vector.Matrix4f;
 
+import java.io.File;
+
 public class GuiShader extends ShaderProgram {
 
-    private static final String VERTEX_FILE = "src/shaders/guiVertexShader.glsl";
-    private static final String FRAGMENT_FILE = "src/shaders/guiFragmentShader.glsl";
+    private static final String VERTEX_FILE = "src" + File.separator + "shaders" + File.separator + "guiVertexShader.glsl";
+    private static final String FRAGMENT_FILE = "src" + File.separator + "shaders" + File.separator + "guiFragmentShader.glsl";
 
     private int location_transformationMatrix;
 

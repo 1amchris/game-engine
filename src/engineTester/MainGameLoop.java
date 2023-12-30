@@ -9,6 +9,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderEngine.*;
 import shaders.GuiShader;
+import shaders.SkyboxShader;
 import shaders.StaticShader;
 import shaders.TerrainShader;
 import textures.GuiTexture;
@@ -38,15 +39,18 @@ public class MainGameLoop {
 
         Loader loader = new Loader();
         List<LightSource> lightSources = new ArrayList<>();
-        lightSources.add(new LightSource(new Vector3f(0, 1000, -7000), new Vector3f(0.4f, 0.4f, 0.4f)));
+//        lightSources.add(new LightSource(new Vector3f(0, 1000, -7000), new Vector3f(0.4f, 0.4f, 0.4f)));
+        lightSources.add(new LightSource(new Vector3f(100, 2000, -700), new Vector3f(1, 1, 1)));
 
         StaticShader entityShader = new StaticShader();
         EntityRenderer entityRenderer = new EntityRenderer(entityShader);
         GuiShader guiShader = new GuiShader();
         GuiRenderer guiRenderer = new GuiRenderer(guiShader, loader);
+        SkyboxShader skyboxShader = new SkyboxShader();
+        SkyboxRenderer skyboxRenderer = new SkyboxRenderer(skyboxShader, loader);
         TerrainShader terrainShader = new TerrainShader();
         TerrainRenderer terrainRenderer = new TerrainRenderer(terrainShader);
-        MasterRenderer renderer = new MasterRenderer(entityRenderer, guiRenderer, terrainRenderer);
+        MasterRenderer renderer = new MasterRenderer(entityRenderer, guiRenderer, skyboxRenderer, terrainRenderer);
 
         Map<Integer, Map<Integer, Terrain>> world = createWorld(loader);
         Map<RawModel, List<Entity>> entities = createStaticEntities(loader, world);

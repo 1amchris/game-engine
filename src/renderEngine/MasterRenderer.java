@@ -19,24 +19,25 @@ public class MasterRenderer {
     private static final float NEAR_PLANE = 0.01f;
     private static final float FAR_PLANE = 800;
 
-//    private static final Vector3f SKY_COLOUR = new Vector3f(192/255f, 240/255f, 240/255f);
-    private static final Vector3f SKY_COLOUR = new Vector3f(64/255f, 80/255f, 80/255f);
+    private static final Vector3f SKY_COLOUR = new Vector3f(145/255f, 170/255f, 190/255f);
 
     private Matrix4f projectionMatrix;
 
     private EntityRenderer entityRenderer;
-    private TerrainRenderer terrainRenderer;
     private GuiRenderer guiRenderer;
+    private SkyboxRenderer skyboxRenderer;
+    private TerrainRenderer terrainRenderer;
 
     private final Map<TexturedModel, List<Entity>> entities = new HashMap<>();
     private final List<Terrain> terrains = new ArrayList<>();
     private final List<GuiTexture> guis = new ArrayList<>();
 
-    public MasterRenderer(EntityRenderer entityRenderer, GuiRenderer guiRenderer, TerrainRenderer terrainRenderer) {
+    public MasterRenderer(EntityRenderer entityRenderer, GuiRenderer guiRenderer, SkyboxRenderer skyboxRenderer, TerrainRenderer terrainRenderer) {
         enableCulling();
         createProjectionMatrix();
         setupRenderer(entityRenderer);
         setupRenderer(guiRenderer);
+        setupRenderer(skyboxRenderer);
         setupRenderer(terrainRenderer);
     }
 
@@ -59,6 +60,8 @@ public class MasterRenderer {
         terrainRenderer.start(lightSources, camera, SKY_COLOUR);
         terrainRenderer.render(terrains);
         terrainRenderer.stop();
+
+        skyboxRenderer.render(camera, SKY_COLOUR);
 
         guiRenderer.render(guis);
 
@@ -125,6 +128,11 @@ public class MasterRenderer {
 
     private void setupRenderer(GuiRenderer renderer) {
         this.guiRenderer = renderer;
+    }
+
+    private void setupRenderer(SkyboxRenderer renderer) {
+        renderer.setProjectionMatrix(projectionMatrix);
+        this.skyboxRenderer = renderer;
     }
 
     private void setupRenderer(TerrainRenderer renderer) {
