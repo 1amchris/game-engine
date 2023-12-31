@@ -6,6 +6,13 @@ import gameObjects.shaders.StaticShader;
 import guis.entities.*;
 import guis.renderers.GuiRenderer;
 import guis.shaders.GuiShader;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+import shared.disposers.Disposer;
 import shared.models.*;
 import shared.renderers.*;
 import shared.textures.ModelTexture;
@@ -14,11 +21,8 @@ import skyboxes.shaders.SkyboxShader;
 import terrains.entities.*;
 import terrains.renderers.TerrainRenderer;
 import terrains.shaders.TerrainShader;
-
-import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
 import water.entities.WaterTile;
+import water.renderers.WaterFrameBuffers;
 import water.renderers.WaterRenderer;
 import water.shaders.WaterShader;
 
@@ -41,29 +45,34 @@ public class MainGameLoop {
 
     public static void main(String[] main) {
 
+        /* Setting up */
         setupNatives();
         DisplayManager.createDisplay();
 
-        Loader loader = new Loader();
+        Disposer disposer = new Disposer();
+        Loader loader = disposer.create(new Loader());
+
         List<LightSource> lightSources = new ArrayList<>();
-        lightSources.add(new LightSource(new Vector3f(100, 2000, -700), new Vector3f(1, 1, 1)));
+        LightSource sun = new LightSource(new Vector3f(100, 2000, -700), new Vector3f(1, 1, 1));
+        lightSources.add(sun);
         MasterRenderer renderer = new MasterRenderer();
 
         /* World elements */
-        SkyboxShader skyboxShader = new SkyboxShader();
+        SkyboxShader skyboxShader = disposer.create(new SkyboxShader());
         renderer.setupRenderer(new SkyboxRenderer(skyboxShader, loader));
 
-        TerrainShader terrainShader = new TerrainShader();
+        TerrainShader terrainShader = disposer.create(new TerrainShader());
         renderer.setupRenderer(new TerrainRenderer(terrainShader));
 
-        WaterShader waterShader = new WaterShader();
-        renderer.setupRenderer(new WaterRenderer(waterShader, loader));
+        WaterShader waterShader = disposer.create(new WaterShader());
+        WaterFrameBuffers waterFbos = disposer.create(new WaterFrameBuffers());
+        renderer.setupRenderer(new WaterRenderer(waterShader, waterFbos, loader));
 
         Map<Integer, Map<Integer, Terrain>> world = createWorld(loader);
         List<WaterTile> waterBodies = createWater();
 
         /*  Game elements */
-        StaticShader entityShader = new StaticShader();
+        StaticShader entityShader = disposer.create(new StaticShader());
         renderer.setupRenderer(new EntityRenderer(entityShader));
 
         Map<RawModel, List<Entity>> entities = createStaticEntities(loader, world);
@@ -81,7 +90,7 @@ public class MainGameLoop {
         entities.put(lampModel.getRawModel(), lamps);
 
         /* Gui elements */
-        GuiShader guiShader = new GuiShader();
+        GuiShader guiShader = disposer.create(new GuiShader());
         renderer.setupRenderer(new GuiRenderer(guiShader, loader));
 
         List<GuiTexture> guis = new ArrayList<>();
@@ -94,20 +103,44 @@ public class MainGameLoop {
             camera.move();
             player.move(getTerrainAtPosition(player.getPosition(), world));
 
-            renderer.renderScene(
-                    Stream.concat(Stream.of(player), entities.values().stream().flatMap(List::stream)).collect(Collectors.toList()),
-                    world.values().stream().flatMap(terrains -> terrains.values().stream()).collect(Collectors.toList()),
-                    waterBodies, guis, lightSources, camera);
+            GL11.glEnable(GL30.GL_CLIP_DISTANCE0);
+
+            float waterHeight = waterBodies.stream()
+                    .map(WaterTile::getPosition)
+                    .min(Comparator.comparingDouble(Vector3f::getY))
+                    .get().y;
+
+            waterFbos.bindReflectionFrameBuffer();
+            float cameraHeightFromWater = 2 * (camera.getPosition().y - waterHeight);
+            camera.getPosition().y -= cameraHeightFromWater;
+            camera.invertPitch();
+            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, 1, 0, -waterHeight));
+            camera.getPosition().y += cameraHeightFromWater;
+            camera.invertPitch();
+
+            waterFbos.bindRefractionFrameBuffer();
+            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, -1, 0, waterHeight + 0.1f));
+            waterFbos.unbindCurrentFrameBuffer();
+
+            GL11.glDisable(GL30.GL_CLIP_DISTANCE0);
+            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, 0, 0, 0));
+            renderer.renderWater(waterBodies, sun, camera);
+            renderer.renderGui(guis);
+
             DisplayManager.updateDisplay();
         }
 
         /*  Clean up */
-        loader.cleanUp();
-        entityShader.cleanUp();
-        guiShader.cleanUp();
-        terrainShader.cleanUp();
-        waterShader.cleanUp();
+        disposer.dispose();
         DisplayManager.closeDisplay();
+    }
+
+    private static List<Terrain> flatten(Map<Integer, Map<Integer, Terrain>> world) {
+        return world.values().stream().flatMap(terrains -> terrains.values().stream()).collect(Collectors.toList());
+    }
+
+    private static List<Entity> flatten(Player player, Map<RawModel, List<Entity>> entities) {
+        return Stream.concat(Stream.of(player), entities.values().stream().flatMap(List::stream)).collect(Collectors.toList());
     }
 
     private static Map<Integer, Map<Integer, Terrain>> createWorld(Loader loader) {

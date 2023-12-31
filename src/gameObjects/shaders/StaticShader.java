@@ -6,6 +6,7 @@ import gameObjects.entities.LightSource;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import shared.shaders.ShaderProgram;
 import shared.textures.ModelTexture;
 import shared.toolbox.Maths;
@@ -33,6 +34,7 @@ public class StaticShader extends ShaderProgram {
     private int location_skyColour;
     private int location_atlasGridSize;
     private int location_atlasTextureOffset;
+    private int location_clipPlane;
 
     public StaticShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
@@ -49,6 +51,7 @@ public class StaticShader extends ShaderProgram {
         location_skyColour = getUniformLocation("skyColour");
         location_atlasGridSize = getUniformLocation("atlasGridSize");
         location_atlasTextureOffset = getUniformLocation("atlasTextureOffset");
+        location_clipPlane = getUniformLocation("clipPlane");
 
         location_lightPosition = new int[MAX_LIGHTS];
         location_lightColour = new int[MAX_LIGHTS];
@@ -68,24 +71,28 @@ public class StaticShader extends ShaderProgram {
         bindAttribute(2, "normal");
     }
 
+    public void loadClipPlane(Vector4f plane) {
+        loadVector(location_clipPlane, plane);
+    }
+
     public void loadAtlasGridSize(int atlasGridSize) {
         loadFloat(location_atlasGridSize, atlasGridSize);
     }
 
     public void loadAtlasTextureOffset(Vector2f offset) {
-        load2DVector(location_atlasTextureOffset, offset);
+        loadVector(location_atlasTextureOffset, offset);
     }
 
     public void loadSkyColour(Vector3f colour) {
-        load3DVector(location_skyColour, colour);
+        loadVector(location_skyColour, colour);
     }
 
     public void loadLights(List<LightSource> lightSources) {
         for (int i = 0; i < MAX_LIGHTS; i++) {
             LightSource lightSource = i < lightSources.size() ? lightSources.get(i) : new EmptyLightSource();
-            load3DVector(location_lightPosition[i], lightSource.getPosition());
-            load3DVector(location_lightColour[i], lightSource.getColour());
-            load3DVector(location_lightAttenuation[i], lightSource.getAttenuation());
+            loadVector(location_lightPosition[i], lightSource.getPosition());
+            loadVector(location_lightColour[i], lightSource.getColour());
+            loadVector(location_lightAttenuation[i], lightSource.getAttenuation());
         }
     }
 

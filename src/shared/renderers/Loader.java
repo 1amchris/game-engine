@@ -1,6 +1,7 @@
 package shared.renderers;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
+import shared.disposers.Disposable;
 import shared.models.RawModel;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -18,7 +19,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Loader {
+public class Loader implements Disposable {
 
     private final List<Integer> vaos = new ArrayList<>();
     private final List<Integer> vbos = new ArrayList<>();
@@ -110,7 +111,7 @@ public class Loader {
         return new TextureData(buffer, width, height);
     }
 
-    public void cleanUp() {
+    public void dispose() {
         for(int vao: vaos) {
             GL30.glDeleteVertexArrays(vao);
         }

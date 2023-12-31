@@ -6,6 +6,7 @@ public class WaterTile {
 	
 	public static final float TILE_SIZE = 60;
 
+
 	private final Vector3f position;
 
 	public WaterTile(Vector3f position){

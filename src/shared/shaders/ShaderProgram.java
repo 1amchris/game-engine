@@ -6,13 +6,15 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+import shared.disposers.Disposable;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 
-public abstract class ShaderProgram {
+public abstract class ShaderProgram implements Disposable {
 
     private final int programID;
     private final int vertexShaderID;
@@ -46,7 +48,7 @@ public abstract class ShaderProgram {
         GL20.glUseProgram(0);
     }
 
-    public void cleanUp() {
+    public void dispose() {
         stop();
         GL20.glDetachShader(programID, vertexShaderID);
         GL20.glDetachShader(programID, fragmentShaderID);
@@ -69,11 +71,15 @@ public abstract class ShaderProgram {
         GL20.glUniform1i(location, value);
     }
 
-    protected void load3DVector(int location, Vector3f value) {
+    protected void loadVector(int location, Vector4f value) {
+        GL20.glUniform4f(location, value.x, value.y, value.z, value.w);
+    }
+
+    protected void loadVector(int location, Vector3f value) {
         GL20.glUniform3f(location, value.x, value.y, value.z);
     }
 
-    protected void load2DVector(int location, Vector2f value) {
+    protected void loadVector(int location, Vector2f value) {
         GL20.glUniform2f(location, value.x, value.y);
     }
 

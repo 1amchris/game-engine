@@ -2,6 +2,7 @@ package terrains.renderers;
 
 import gameObjects.entities.Camera;
 import gameObjects.entities.LightSource;
+import org.lwjgl.util.vector.Vector4f;
 import shared.models.RawModel;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -27,14 +28,15 @@ public class TerrainRenderer {
         shader.stop();
     }
 
-    public void setProjectionMatrix(Matrix4f projectionMatrix) {
+    public void setupShader(Matrix4f projectionMatrix) {
         shader.start();
         shader.loadProjectionMatrix(projectionMatrix);
         shader.stop();
     }
 
-    public void start(List<LightSource> lightSources, Camera camera, Vector3f skyColour) {
+    public void start(List<LightSource> lightSources, Camera camera, Vector4f clipPlane, Vector3f skyColour) {
         shader.start();
+        shader.loadClipPlane(clipPlane);
         shader.loadLights(lightSources);
         shader.loadViewMatrix(camera);
         shader.loadSkyColour(skyColour);

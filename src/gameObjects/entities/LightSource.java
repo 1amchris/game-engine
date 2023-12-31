@@ -6,7 +6,7 @@ public class LightSource {
 
     private Vector3f position;
     private Vector3f colour;
-    private Vector3f attenuation = new Vector3f(1, 0,0);
+    private Vector3f attenuation = new Vector3f(1, 0, 0);
 
     public LightSource(Vector3f position, Vector3f colour) {
         this.position = position;

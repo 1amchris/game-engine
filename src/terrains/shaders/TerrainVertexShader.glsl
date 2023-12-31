@@ -15,11 +15,16 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform vec3 lightPosition[4];
 
+uniform vec4 clipPlane;
+
 const float density = 0.005;
 const float gradient = 2.0;
 
 void main(void) {
     vec4 worldPosition = transformationMatrix * vec4(position, 1.0);
+
+    gl_ClipDistance[0] = dot(worldPosition, clipPlane);
+
     vec4 positionRelativeToCamera = viewMatrix * worldPosition;
     gl_Position = projectionMatrix * positionRelativeToCamera;
     pass_textureCoordinates = textureCoordinates;

@@ -9,6 +9,7 @@ import shared.models.TexturedModel;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import shared.renderers.MasterRenderer;
 import shared.textures.ModelTexture;
 import shared.toolbox.Maths;
@@ -24,14 +25,15 @@ public class EntityRenderer {
         this.shader = shader;
     }
 
-    public void setProjectionMatrix(Matrix4f projectionMatrix) {
+    public void setupShader(Matrix4f projectionMatrix) {
         shader.start();
         shader.loadProjectionMatrix(projectionMatrix);
         shader.stop();
     }
 
-    public void start(List<LightSource> lightSources, Camera camera, Vector3f skyColour) {
+    public void start(List<LightSource> lightSources, Camera camera, Vector4f clipPlane, Vector3f skyColour) {
         shader.start();
+        shader.loadClipPlane(clipPlane);
         shader.loadLights(lightSources);
         shader.loadViewMatrix(camera);
         shader.loadSkyColour(skyColour);

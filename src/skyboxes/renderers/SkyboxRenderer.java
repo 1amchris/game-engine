@@ -102,7 +102,7 @@ public class SkyboxRenderer {
         shader.stop();
     }
 
-    public void setProjectionMatrix(Matrix4f projectionMatrix) {
+    public void setupShader(Matrix4f projectionMatrix) {
         shader.start();
         shader.loadProjectionMatrix(projectionMatrix);
         shader.stop();

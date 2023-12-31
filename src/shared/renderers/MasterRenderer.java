@@ -3,6 +3,7 @@ package shared.renderers;
 import gameObjects.entities.Camera;
 import gameObjects.entities.Entity;
 import gameObjects.entities.LightSource;
+import org.lwjgl.util.vector.Vector4f;
 import terrains.entities.Terrain;
 import guis.renderers.GuiRenderer;
 import shared.models.TexturedModel;
@@ -37,7 +38,6 @@ public class MasterRenderer {
 
     private final Map<TexturedModel, List<Entity>> entities = new HashMap<>();
     private final List<Terrain> terrains = new ArrayList<>();
-    private final List<WaterTile> water = new ArrayList<>();
 
     public MasterRenderer() {
         enableCulling();
@@ -45,12 +45,12 @@ public class MasterRenderer {
     }
 
     public void setupRenderer(EntityRenderer renderer) {
-        renderer.setProjectionMatrix(projectionMatrix);
+        renderer.setupShader(projectionMatrix);
         this.entityRenderer = renderer;
     }
 
     public void setupRenderer(WaterRenderer renderer) {
-        renderer.setProjectionMatrix(projectionMatrix);
+        renderer.setupShader(projectionMatrix);
         this.waterRenderer = renderer;
     }
 
@@ -59,12 +59,12 @@ public class MasterRenderer {
     }
 
     public void setupRenderer(SkyboxRenderer renderer) {
-        renderer.setProjectionMatrix(projectionMatrix);
+        renderer.setupShader(projectionMatrix);
         this.skyboxRenderer = renderer;
     }
 
     public void setupRenderer(TerrainRenderer renderer) {
-        renderer.setProjectionMatrix(projectionMatrix);
+        renderer.setupShader(projectionMatrix);
         this.terrainRenderer = renderer;
     }
 
@@ -77,41 +77,42 @@ public class MasterRenderer {
         GL11.glDisable(GL11.GL_CULL_FACE);
     }
 
-    public void renderScene(List<Entity> entities, List<Terrain> terrains, List<WaterTile> waterTiles,
-                            List<GuiTexture> guis, List<LightSource> lightSources, Camera camera) {
+    public void renderScene(List<Entity> entities, List<Terrain> terrains,
+                            List<LightSource> lightSources, Camera camera, Vector4f clipPlane) {
         processEntities(entities);
         processTerrains(terrains);
-        processWater(waterTiles);
-        render(lightSources, camera);
-        render(guis);
+        render(lightSources, camera, clipPlane);
     }
-    private void render(List<GuiTexture> guis) {
+
+    public void renderWater(List<WaterTile> waterTiles, LightSource lightSource, Camera camera) {
+        if (waterRenderer != null) {
+            waterRenderer.render(waterTiles, lightSource, camera, NEAR_PLANE, FAR_PLANE);
+        }
+    }
+
+    public void renderGui(List<GuiTexture> guis) {
         if (guiRenderer != null) {
             guiRenderer.render(guis);
         }
     }
 
-    private void render(List<LightSource> lightSources, Camera camera) {
+    private void render(List<LightSource> lightSources, Camera camera, Vector4f clipPlane) {
         beforeRender();
 
         if (entityRenderer != null) {
-            entityRenderer.start(lightSources, camera, SKY_COLOUR);
+            entityRenderer.start(lightSources, camera, clipPlane, SKY_COLOUR);
             entityRenderer.render(entities);
             entityRenderer.stop();
         }
 
         if (terrainRenderer != null) {
-            terrainRenderer.start(lightSources, camera, SKY_COLOUR);
+            terrainRenderer.start(lightSources, camera, clipPlane, SKY_COLOUR);
             terrainRenderer.render(terrains);
             terrainRenderer.stop();
         }
 
         if (skyboxRenderer != null) {
             skyboxRenderer.render(camera, SKY_COLOUR);
-        }
-
-        if (waterRenderer != null) {
-            waterRenderer.render(water, camera);
         }
 
         afterRender();
@@ -143,16 +144,6 @@ public class MasterRenderer {
         for (Entity entity: entities) {
             processEntity(entity);
         }
-    }
-
-    public void processWater(Collection<WaterTile> waterTiles) {
-        for (WaterTile tile: waterTiles) {
-            processWater(tile);
-        }
-    }
-
-    public void processWater(WaterTile tile) {
-        water.add(tile);
     }
 
     public Matrix4f getProjectionMatrix() {
