@@ -22,6 +22,8 @@ import java.util.List;
 
 public class Loader implements Disposable {
 
+    private static final float DESIRED_ANISOTROPIC_AMOUNT = 4f;
+
     private final List<Integer> vaos = new ArrayList<>();
     private final List<Integer> vbos = new ArrayList<>();
     private final List<Integer> textures = new ArrayList<>();
@@ -62,7 +64,14 @@ public class Loader implements Disposable {
             texture = TextureLoader.getTexture("PNG", new FileInputStream(textureFilePath));
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, -0.5f); // The more negative the number, the less noticeable the mipmapping effect
+            if (GLContext.getCapabilities().GL_EXT_texture_filter_anisotropic) {
+                float amount = Math.min(DESIRED_ANISOTROPIC_AMOUNT, GL11.glGetFloat(EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));
+                GL11.glTexParameterf(GL11.GL_TEXTURE_2D, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, amount);
+                GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0);
+            } else {
+                System.out.println("Anisotropic filtering is not supported.");
+                GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, -1f); // The more negative the number, the less noticeable the mipmapping effect
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

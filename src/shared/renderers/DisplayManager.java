@@ -10,6 +10,7 @@ public class DisplayManager {
     private static final int WIDTH = 1280;
     private static final int HEIGHT = 720;
     private static final int FPS_CAP = 120;
+    private static final int ANTIALIASING_SAMPLES_COUNT = 4;
 
     private static long lastFrameTime;
     private static float deltaTime;
@@ -22,7 +23,7 @@ public class DisplayManager {
 
         try {
             Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
-            Display.create(new PixelFormat(), attribs);
+            Display.create(new PixelFormat().withSamples(ANTIALIASING_SAMPLES_COUNT), attribs);
             Display.setTitle("Check me out on https://github.com/1amchris/game-engine");
         } catch (LWJGLException e) {
             e.printStackTrace();
