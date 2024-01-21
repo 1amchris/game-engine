@@ -4,14 +4,13 @@ import gameObjects.entities.LightSource;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import shared.shaders.ShaderProgram;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
 import gameObjects.entities.Camera;
 
-import java.io.File;
-
 public class WaterShader extends ShaderProgram {
 
-	private static final String BASE_PATH = String.join(File.separator, new String[] { "src", "water", "shaders" }) + File.separator;
+	private static final String BASE_PATH = Directories.fromPath("src", "water", "shaders");
 	private final static String VERTEX_FILE = BASE_PATH + "WaterVertexShader.glsl";
 	private final static String FRAGMENT_FILE = BASE_PATH + "WaterFragmentShader.glsl";
 

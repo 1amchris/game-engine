@@ -10,6 +10,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import shared.renderers.DisplayManager;
 import shared.renderers.Loader;
+import shared.toolbox.Directories;
 import skyboxes.shaders.SkyboxShader;
 
 import java.io.File;
@@ -62,9 +63,9 @@ public class SkyboxRenderer {
             SIZE, -SIZE,  SIZE
     };
 
-    private static final String SKYBOX_DIR = "skybox" + File.separator;
-    private static final String SKYBOX_DAY_TEXTURES_DIR = SKYBOX_DIR + "beautifulSky" + File.separator;
-    private static final String SKYBOX_NIGHT_TEXTURES_DIR = SKYBOX_DIR + "skyFullOfStars" + File.separator;
+    private static final String SKYBOX_DIR = Directories.fromPath("skybox");
+    private static final String SKYBOX_DAY_TEXTURES_DIR = Directories.fromPath(SKYBOX_DIR, "beautifulSky");
+    private static final String SKYBOX_NIGHT_TEXTURES_DIR = Directories.fromPath(SKYBOX_DIR, "skyFullOfStars");
 
     private static final int DAYTIME_SPEED = 500;
 

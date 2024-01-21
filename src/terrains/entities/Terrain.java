@@ -4,6 +4,7 @@ import shared.models.RawModel;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import shared.renderers.Loader;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
 
 import javax.imageio.ImageIO;
@@ -79,7 +80,7 @@ public class Terrain {
 
         BufferedImage image = null;
         try {
-            image = ImageIO.read(new File("res" + File.separator + heightMapFileName + ".png"));
+            image = ImageIO.read(new File(Directories.fromPath("res") + heightMapFileName + ".png"));
         } catch (IOException e) {
             e.printStackTrace();
         }

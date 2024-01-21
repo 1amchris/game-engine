@@ -2,7 +2,9 @@ package engineTester;
 
 import gameObjects.entities.*;
 import gameObjects.renderers.EntityRenderer;
-import gameObjects.shaders.StaticShader;
+import gameObjects.renderers.NMEntityRenderer;
+import gameObjects.shaders.EntityShader;
+import gameObjects.shaders.NMEntityShader;
 import guis.entities.*;
 import guis.renderers.GuiRenderer;
 import guis.shaders.GuiShader;
@@ -16,6 +18,7 @@ import shared.disposers.Disposer;
 import shared.models.*;
 import shared.renderers.*;
 import shared.textures.ModelTexture;
+import shared.toolbox.Directories;
 import skyboxes.renderers.SkyboxRenderer;
 import skyboxes.shaders.SkyboxShader;
 import terrains.entities.*;
@@ -34,9 +37,10 @@ import java.util.stream.Stream;
 
 public class MainGameLoop {
 
-    private static final String GUI_DIR = "guis" + File.separator;
-    private static final String OBJECT_DIR = "objects" + File.separator;
-    private static final String TERRAIN_DIR = "terrain" + File.separator;
+    private static final String GUI_DIR = Directories.fromPath("guis");
+    private static final String OBJECT_DIR = Directories.fromPath("objects");
+    private static final String NM_OBJECT_DIR = Directories.fromPath("objects", "normaled");
+    private static final String TERRAIN_DIR = Directories.fromPath("terrain");
 
     private static final String TERRAIN_BLEND_MAP_FILENAME = TERRAIN_DIR + "blendMap";
     private static final String TERRAIN_HEIGHT_MAP_FILENAME = TERRAIN_DIR + "heightMap";
@@ -64,18 +68,21 @@ public class MainGameLoop {
         TerrainShader terrainShader = disposer.create(new TerrainShader());
         renderer.setupRenderer(new TerrainRenderer(terrainShader));
 
-        WaterShader waterShader = disposer.create(new WaterShader());
-        WaterFrameBuffers waterFbos = disposer.create(new WaterFrameBuffers());
-        renderer.setupRenderer(new WaterRenderer(waterShader, waterFbos, loader));
+//        WaterShader waterShader = disposer.create(new WaterShader());
+//        WaterFrameBuffers waterFbos = disposer.create(new WaterFrameBuffers());
+//        renderer.setupRenderer(new WaterRenderer(waterShader, waterFbos, loader));
 
         Map<Integer, Map<Integer, Terrain>> world = createWorld(loader);
-        List<WaterTile> waterBodies = createWater();
+//        List<WaterTile> waterBodies = createWater();
 
         /*  Game elements */
-        StaticShader entityShader = disposer.create(new StaticShader());
+        EntityShader entityShader = disposer.create(new EntityShader());
         renderer.setupRenderer(new EntityRenderer(entityShader));
+        NMEntityShader nmEntityShader = disposer.create(new NMEntityShader());
+        renderer.setupRenderer(new NMEntityRenderer(nmEntityShader));
 
         Map<RawModel, List<Entity>> entities = createStaticEntities(loader, world);
+        Map<RawModel, List<Entity>> nmEntities = createStaticNMEntities(loader, world);
         Player player = createPlayer(loader);
         Camera camera = new Camera(player);
 
@@ -105,26 +112,30 @@ public class MainGameLoop {
 
             GL11.glEnable(GL30.GL_CLIP_DISTANCE0);
 
-            float waterHeight = waterBodies.stream()
-                    .map(WaterTile::getPosition)
-                    .min(Comparator.comparingDouble(Vector3f::getY))
-                    .get().y;
+            List<Entity> flattenedEntities = flatten(player, entities);
+            List<Entity> flattenedNMEntities = flatten(null, nmEntities);
+            List<Terrain> flattenedWorld = flatten(world);
 
-            waterFbos.bindReflectionFrameBuffer();
-            float cameraHeightFromWater = 2 * (camera.getPosition().y - waterHeight);
-            camera.getPosition().y -= cameraHeightFromWater;
-            camera.invertPitch();
-            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, 1, 0, -waterHeight));
-            camera.getPosition().y += cameraHeightFromWater;
-            camera.invertPitch();
-
-            waterFbos.bindRefractionFrameBuffer();
-            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, -1, 0, waterHeight + 0.1f));
-            waterFbos.unbindCurrentFrameBuffer();
+//            float waterHeight = waterBodies.stream()
+//                    .map(WaterTile::getPosition)
+//                    .min(Comparator.comparingDouble(Vector3f::getY))
+//                    .get().y;
+//
+//            waterFbos.bindReflectionFrameBuffer();
+//            float cameraHeightFromWater = 2 * (camera.getPosition().y - waterHeight);
+//            camera.getPosition().y -= cameraHeightFromWater;
+//            camera.invertPitch();
+//            renderer.renderScene(flattenedEntities, flattenedNMEntities, flattenedWorld, lightSources, camera, new Vector4f(0, 1, 0, -waterHeight));
+//            camera.getPosition().y += cameraHeightFromWater;
+//            camera.invertPitch();
+//
+//            waterFbos.bindRefractionFrameBuffer();
+//            renderer.renderScene(flattenedEntities, flattenedNMEntities, flattenedWorld, lightSources, camera, new Vector4f(0, -1, 0, waterHeight + 0.1f));
+//            waterFbos.unbindCurrentFrameBuffer();
 
             GL11.glDisable(GL30.GL_CLIP_DISTANCE0);
-            renderer.renderScene(flatten(player, entities), flatten(world), lightSources, camera, new Vector4f(0, 0, 0, 0));
-            renderer.renderWater(waterBodies, sun, camera);
+            renderer.renderScene(flattenedEntities, flattenedNMEntities, flattenedWorld, lightSources, camera, new Vector4f(0, 0, 0, 0));
+//            renderer.renderWater(waterBodies, sun, camera);
             renderer.renderGui(guis);
 
             DisplayManager.updateDisplay();
@@ -140,7 +151,11 @@ public class MainGameLoop {
     }
 
     private static List<Entity> flatten(Player player, Map<RawModel, List<Entity>> entities) {
-        return Stream.concat(Stream.of(player), entities.values().stream().flatMap(List::stream)).collect(Collectors.toList());
+        if (player != null) {
+            return Stream.concat(Stream.of(player), entities.values().stream().flatMap(List::stream)).collect(Collectors.toList());
+        } else {
+            return entities.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        }
     }
 
     private static Map<Integer, Map<Integer, Terrain>> createWorld(Loader loader) {
@@ -194,7 +209,7 @@ public class MainGameLoop {
     private static void setupNatives() {
         try {
             String workingDir = System.getProperty("user.dir");
-            String nativesPath = workingDir + File.separator + "lib" + File.separator + "natives";
+            String nativesPath = Directories.fromPath(workingDir, "lib", "natives");
             System.setProperty("java.library.path", nativesPath);
 
             // Need to reinitialize the native library path (hack)
@@ -259,6 +274,28 @@ public class MainGameLoop {
         List<Entity> bunnies = generateRandomEntities(bunnyModel, bunnyTexture, 0.25f, world, count);
         entities.put(bunnyModel, bunnies);
         return bunnies;
+    }
+
+    private static Map<RawModel, List<Entity>> createStaticNMEntities(Loader loader, Map<Integer, Map<Integer, Terrain>> world) {
+        Map<RawModel, List<Entity>> entities = new Hashtable<>();
+
+        createBarrels(loader, entities, world, 1);
+
+        return entities;
+    }
+
+    private static List<Entity> createBarrels(Loader loader, Map<RawModel, List<Entity>> entities, Map<Integer, Map<Integer, Terrain>> world, int count) {
+        RawModel barrelModel = NMObjLoader.loadObjModel(NM_OBJECT_DIR + "barrel", loader);
+        ModelTexture barrelTexture = new ModelTexture(loader.loadTexture(NM_OBJECT_DIR + "barrel"));
+        barrelTexture.setNormalMap(loader.loadTexture(NM_OBJECT_DIR + "barrelNormal"));
+        barrelTexture.setShineDamper(10);
+        barrelTexture.setReflectivity(0.5f);
+//        List<Entity> barrels = generateRandomEntities(barrelModel, barrelTexture, 1f, world, count);
+        List<Entity> barrels = Arrays.stream(new Entity[]{
+            new Entity(new TexturedModel(barrelModel, barrelTexture), new Vector3f(0, 4, 0), new Vector3f(0, 0, 0), 0.5f),
+        }).collect(Collectors.toList());
+        entities.put(barrelModel, barrels);
+        return barrels;
     }
 
     private static Player createPlayer(Loader loader) {

@@ -7,14 +7,14 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import shared.shaders.ShaderProgram;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
 
-import java.io.File;
 import java.util.List;
 
 public class TerrainShader extends ShaderProgram {
 
-    private static final String BASE_PATH = String.join(File.separator, new String[] { "src", "terrains", "shaders" }) + File.separator;
+    private static final String BASE_PATH = Directories.fromPath("src", "terrains", "shaders");
     private static final String VERTEX_FILE = BASE_PATH + "TerrainVertexShader.glsl";
     private static final String FRAGMENT_FILE = BASE_PATH + "TerrainFragmentShader.glsl";
 

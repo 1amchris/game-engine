@@ -15,6 +15,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import shared.renderers.DisplayManager;
 import shared.renderers.Loader;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
 import gameObjects.entities.Camera;
 import water.entities.WaterTile;
@@ -22,8 +23,9 @@ import water.shaders.WaterShader;
 
 public class WaterRenderer {
 
-	private static final String DUDV_MAP = "water" + File.separator + "dudvMap";
-	private static final String NORMAL_MAP = "water" + File.separator + "normalMap";
+	private static final String BASE_DIR = Directories.fromPath("water");
+	private static final String DUDV_MAP = BASE_DIR + "dudvMap";
+	private static final String NORMAL_MAP = BASE_DIR + "normalMap";
 
 	private static final float WAVE_SPEED = 0.03f;
 	private static final float RIPPLES_STRENGTH = 0.04f;

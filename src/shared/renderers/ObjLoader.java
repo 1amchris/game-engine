@@ -3,19 +3,25 @@ package shared.renderers;
 import shared.models.RawModel;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import shared.toolbox.Directories;
+import shared.toolbox.Vectors;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ObjLoader {
+
+    private static final String RES_LOC = Directories.fromPath("res");
+
     public static RawModel loadObjModel(String fileName, Loader loader) {
         FileReader fileReader = null;
         try {
-            fileReader = new FileReader("res" + File.separator + fileName + ".obj");
+            fileReader = new FileReader(RES_LOC + fileName + ".obj");
         } catch (IOException e) {
             System.err.println("Failed to load file!");
             e.printStackTrace();
@@ -27,25 +33,23 @@ public class ObjLoader {
         List<Vector2f> textures = new ArrayList<>();
         List<Vector3f> normals = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
-        float[] verticesArray = null;
         float[] normalsArray = null;
         float[] texturesArray = null;
-        int[] indicesArray = null;
 
         try {
             while(true) {
                 line = reader.readLine();
                 String[] currentLine = line.split(" ");
                 if (line.startsWith("v ")) {
-                    Vector3f vertex = parseVector3f(currentLine);
+                    Vector3f vertex = Vectors.parseVector3f(currentLine, 1, 4);
                     vertices.add(vertex);
 
                 } else if (line.startsWith("vt ")) {
-                    Vector2f texture = parseVector2f(currentLine);
+                    Vector2f texture = Vectors.parseVector2f(currentLine, 1, 3);
                     textures.add(texture);
 
                 } else if (line.startsWith("vn ")) {
-                    Vector3f normal = parseVector3f(currentLine);
+                    Vector3f normal = Vectors.parseVector3f(currentLine, 1, 4);
                     normals.add(normal);
 
                 } else if (line.startsWith("f ")) {
@@ -55,12 +59,7 @@ public class ObjLoader {
                 }
             }
 
-            while(line != null) {
-                if (!line.startsWith("f ")) {
-                    line = reader.readLine();
-                    continue;
-                }
-
+            while(line != null && line.startsWith("f ")) {
                 String[] currentLine = line.split(" ");
                 for (int i = 0; i < 3; i++) {
                     String[] vertex = currentLine[i + 1].split("/");
@@ -76,8 +75,8 @@ public class ObjLoader {
             e.printStackTrace();
         }
 
-        verticesArray = new float[vertices.size() * 3];
-        indicesArray = new int[indices.size()];
+        float[] verticesArray = new float[vertices.size() * 3];
+        int[] indicesArray = new int[indices.size()];
 
         int vertexPointer = 0;
         for (Vector3f vertex: vertices) {
@@ -91,19 +90,6 @@ public class ObjLoader {
         }
 
         return loader.loadToVAO(verticesArray, texturesArray, normalsArray, indicesArray);
-    }
-
-    private static Vector3f parseVector3f(String[] elements) {
-        return new Vector3f(
-                Float.parseFloat(elements[1]),
-                Float.parseFloat(elements[2]),
-                Float.parseFloat(elements[3]));
-    }
-
-    private static Vector2f parseVector2f(String[] elements) {
-        return new Vector2f(
-                Float.parseFloat(elements[1]),
-                Float.parseFloat(elements[2]));
     }
 
     private static void processVertex(String[] vertexData, List<Integer> indices,

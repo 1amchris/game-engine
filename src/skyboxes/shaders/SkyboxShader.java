@@ -5,13 +5,12 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import shared.renderers.DisplayManager;
 import shared.shaders.ShaderProgram;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
-
-import java.io.File;
 
 public class SkyboxShader extends ShaderProgram {
 
-    private static final String BASE_PATH = String.join(File.separator, new String[] { "src", "skyboxes", "shaders" }) + File.separator;
+    private static final String BASE_PATH = Directories.fromPath("src", "skyboxes", "shaders");
     private static final String VERTEX_FILE = BASE_PATH + "SkyboxVertexShader.glsl";
     private static final String FRAGMENT_FILE = BASE_PATH + "SkyboxFragmentShader.glsl";
 

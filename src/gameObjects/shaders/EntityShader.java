@@ -9,14 +9,14 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import shared.shaders.ShaderProgram;
 import shared.textures.ModelTexture;
+import shared.toolbox.Directories;
 import shared.toolbox.Maths;
 
-import java.io.File;
 import java.util.List;
 
-public class StaticShader extends ShaderProgram {
+public class EntityShader extends ShaderProgram {
 
-    private static final String BASE_PATH = String.join(File.separator, new String[] { "src", "gameObjects", "shaders" }) + File.separator;
+    private static final String BASE_PATH = Directories.fromPath("src", "gameObjects", "shaders");
     private static final String VERTEX_FILE = BASE_PATH + "EntityVertexShader.glsl";
     private static final String FRAGMENT_FILE = BASE_PATH + "EntityFragmentShader.glsl";
 
@@ -36,7 +36,7 @@ public class StaticShader extends ShaderProgram {
     private int location_atlasTextureOffset;
     private int location_clipPlane;
 
-    public StaticShader() {
+    public EntityShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
     }
 
@@ -96,7 +96,7 @@ public class StaticShader extends ShaderProgram {
         }
     }
 
-    public void loadTextureProperties(ModelTexture texture) {
+    public void loadTexture(ModelTexture texture) {
         loadFloat(location_shineDamper, texture.getShineDamper());
         loadFloat(location_reflectivity, texture.getReflectivity());
         loadBoolean(location_useFakeLighting, texture.getUseFakeLighting());

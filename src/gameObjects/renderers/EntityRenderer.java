@@ -3,7 +3,7 @@ package gameObjects.renderers;
 import gameObjects.entities.Camera;
 import gameObjects.entities.Entity;
 import gameObjects.entities.LightSource;
-import gameObjects.shaders.StaticShader;
+import gameObjects.shaders.EntityShader;
 import shared.models.RawModel;
 import shared.models.TexturedModel;
 import org.lwjgl.opengl.*;
@@ -19,9 +19,9 @@ import java.util.Map;
 
 public class EntityRenderer {
 
-    private final StaticShader shader;
+    private final EntityShader shader;
 
-    public EntityRenderer(StaticShader shader) {
+    public EntityRenderer(EntityShader shader) {
         this.shader = shader;
     }
 
@@ -65,7 +65,7 @@ public class EntityRenderer {
 
         ModelTexture texture = model.getTexture();
         shader.loadAtlasGridSize(texture.getAtlasGridSize());
-        shader.loadTextureProperties(texture);
+        shader.loadTexture(texture);
 
         if (texture.isTransparent()) {
             MasterRenderer.disableCulling();

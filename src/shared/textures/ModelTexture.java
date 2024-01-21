@@ -12,6 +12,7 @@ public class ModelTexture {
 
     private int atlasGridSize = 1;
     private int texturesCount = 1;
+    private Integer normalMapID = null;
 
     public ModelTexture(int id) {
         this.textureID = id;
@@ -19,6 +20,18 @@ public class ModelTexture {
 
     public int getID() {
         return this.textureID;
+    }
+
+    public int getNormalMapID() {
+        return this.normalMapID;
+    }
+
+    public void setNormalMap(int id) {
+        this.normalMapID = id;
+    }
+
+    public boolean supportsNormalMapping() {
+        return this.normalMapID != null;
     }
 
     public float getShineDamper() {

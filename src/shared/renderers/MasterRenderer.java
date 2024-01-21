@@ -3,6 +3,7 @@ package shared.renderers;
 import gameObjects.entities.Camera;
 import gameObjects.entities.Entity;
 import gameObjects.entities.LightSource;
+import gameObjects.renderers.NMEntityRenderer;
 import org.lwjgl.util.vector.Vector4f;
 import terrains.entities.Terrain;
 import guis.renderers.GuiRenderer;
@@ -22,21 +23,23 @@ import java.util.*;
 
 public class MasterRenderer {
 
+    private static final Vector3f SKY_COLOUR = new Vector3f(145/255f, 170/255f, 190/255f);
+
     private static final float FOV = 90;
     private static final float NEAR_PLANE = 0.01f;
     private static final float FAR_PLANE = 800;
 
-    private static final Vector3f SKY_COLOUR = new Vector3f(145/255f, 170/255f, 190/255f);
-
     private Matrix4f projectionMatrix;
 
     private EntityRenderer entityRenderer;
+    private NMEntityRenderer nmEntityRenderer;
     private GuiRenderer guiRenderer;
     private SkyboxRenderer skyboxRenderer;
     private TerrainRenderer terrainRenderer;
     private WaterRenderer waterRenderer;
 
     private final Map<TexturedModel, List<Entity>> entities = new HashMap<>();
+    private final Map<TexturedModel, List<Entity>> nmEntities = new HashMap<>();
     private final List<Terrain> terrains = new ArrayList<>();
 
     public MasterRenderer() {
@@ -47,6 +50,11 @@ public class MasterRenderer {
     public void setupRenderer(EntityRenderer renderer) {
         renderer.setupShader(projectionMatrix);
         this.entityRenderer = renderer;
+    }
+
+    public void setupRenderer(NMEntityRenderer renderer) {
+        renderer.setupShader(projectionMatrix);
+        this.nmEntityRenderer = renderer;
     }
 
     public void setupRenderer(WaterRenderer renderer) {
@@ -77,9 +85,10 @@ public class MasterRenderer {
         GL11.glDisable(GL11.GL_CULL_FACE);
     }
 
-    public void renderScene(List<Entity> entities, List<Terrain> terrains,
+    public void renderScene(List<Entity> entities, List<Entity> nmEntities, List<Terrain> terrains,
                             List<LightSource> lightSources, Camera camera, Vector4f clipPlane) {
         processEntities(entities);
+        processNMEntities(nmEntities);
         processTerrains(terrains);
         render(lightSources, camera, clipPlane);
     }
@@ -103,6 +112,12 @@ public class MasterRenderer {
             entityRenderer.start(lightSources, camera, clipPlane, SKY_COLOUR);
             entityRenderer.render(entities);
             entityRenderer.stop();
+        }
+
+        if (nmEntityRenderer != null) {
+            nmEntityRenderer.start(lightSources, camera, clipPlane, SKY_COLOUR);
+            nmEntityRenderer.render(nmEntities);
+            nmEntityRenderer.stop();
         }
 
         if (terrainRenderer != null) {
@@ -146,6 +161,24 @@ public class MasterRenderer {
         }
     }
 
+    public void processNMEntity(Entity entity) {
+        TexturedModel entityModel = entity.getModel();
+        List<Entity> batch = nmEntities.get(entityModel);
+        if (batch != null) {
+            batch.add(entity);
+        } else {
+            List<Entity> newBatch = new ArrayList<>();
+            newBatch.add(entity);
+            nmEntities.put(entityModel, newBatch);
+        }
+    }
+
+    public void processNMEntities(Collection<Entity> entities) {
+        for (Entity entity: entities) {
+            processNMEntity(entity);
+        }
+    }
+
     public Matrix4f getProjectionMatrix() {
         return projectionMatrix;
     }
@@ -173,6 +206,7 @@ public class MasterRenderer {
 
     private void afterRender() {
         entities.clear();
+        nmEntities.clear();
         terrains.clear();
     }
 }
